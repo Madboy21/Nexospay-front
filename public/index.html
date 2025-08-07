@@ -1,27 +1,16 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
-    <title>NexosPay</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <style>
-      body {
-        background: #222;
-        color: #fff;
-        text-align: center;
-        padding: 40px;
-        font-family: sans-serif;
-      }
-    </style>
-  </head>
-  <body>
-    <h1>Welcome to Nexos</h1>
-    <p id="user"></p>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#121212" />
+    <title>Earn G Token</title>
 
-    <script>
-      const tg = window.Telegram.WebApp;
-      tg.expand();
-      const user = tg.initDataUnsafe?.user;
-      document.getElementById("user").innerText = `👋 Hello, ${user?.first_name}`;
-    </script>
+    <!-- Telegram WebApp Initialization -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  </head>
+  <body style="margin: 0; padding: 0; background: #121212; color: white;">
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div id="root"></div>
   </body>
 </html>
