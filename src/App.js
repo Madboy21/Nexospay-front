@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from "react";
+import axios from "axios";
 import {
   BrowserRouter as Router,
   Routes,
   Route,
   Link,
-  useNavigate,
 } from "react-router-dom";
 
 import Header from "./components/Header";
@@ -14,7 +14,7 @@ import Withdraw from "./components/Withdraw";
 
 function Home({ user, balance, completed, totalTasks, handleComplete }) {
   return (
-    <div>
+    <>
       <Header user={user} balance={balance} />
       <TaskProgress total={totalTasks} completed={completed} />
       {completed < totalTasks ? (
@@ -24,7 +24,7 @@ function Home({ user, balance, completed, totalTasks, handleComplete }) {
           ✅ All {totalTasks} tasks completed today!
         </p>
       )}
-    </div>
+    </>
   );
 }
 
@@ -44,22 +44,13 @@ function Navbar() {
         boxSizing: "border-box",
       }}
     >
-      <Link
-        to="/"
-        style={{ color: "#0af", textDecoration: "none", padding: "10px" }}
-      >
+      <Link to="/" style={{ color: "#0af", textDecoration: "none", padding: "10px" }}>
         🏠 Home
       </Link>
-      <Link
-        to="/"
-        style={{ color: "#0af", textDecoration: "none", padding: "10px" }}
-      >
+      <Link to="/" style={{ color: "#0af", textDecoration: "none", padding: "10px" }}>
         💰 Earn
       </Link>
-      <Link
-        to="/withdraw"
-        style={{ color: "#0af", textDecoration: "none", padding: "10px" }}
-      >
+      <Link to="/withdraw" style={{ color: "#0af", textDecoration: "none", padding: "10px" }}>
         💸 Withdraw
       </Link>
     </nav>
@@ -71,6 +62,7 @@ function App() {
   const [balance, setBalance] = useState(0);
   const [completed, setCompleted] = useState(0);
   const totalTasks = 20;
+  const backendUrl = "http://localhost:5000"; // Change this to your backend URL
 
   useEffect(() => {
     const tg = window.Telegram.WebApp;
@@ -78,11 +70,44 @@ function App() {
     tg.expand();
     const telegramUser = tg.initDataUnsafe?.user;
     setUser(telegramUser);
+
+    if (telegramUser) {
+      // Fetch user data from backend
+      axios
+        .get(`${backendUrl}/api/user/${telegramUser.id}`)
+        .then((res) => {
+          if (res.data) {
+            setBalance(res.data.balance || 0);
+            setCompleted(res.data.completed || 0);
+          }
+        })
+        .catch((err) => {
+          console.error("Failed to fetch user data:", err);
+        });
+    }
   }, []);
 
+  const saveProgress = (newCompleted, newBalance) => {
+    if (!user) return;
+    axios
+      .post(`${backendUrl}/api/user/update`, {
+        telegramId: user.id,
+        completed: newCompleted,
+        balance: newBalance,
+      })
+      .catch((err) => {
+        console.error("Failed to save progress:", err);
+      });
+  };
+
   const handleComplete = () => {
-    setCompleted((prev) => prev + 1);
-    setBalance((prev) => prev + 1); // 1 VET per ad
+    const newCompleted = completed + 1;
+    const newBalance = balance + 1;
+
+    setCompleted(newCompleted);
+    setBalance(newBalance);
+
+    saveProgress(newCompleted, newBalance);
   };
 
   if (!user)
@@ -128,7 +153,7 @@ function App() {
               />
             }
           />
-          <Route path="/withdraw" element={<Withdraw telegramId={user.id} />} />
+          <Route path="/withdraw" element={<Withdraw telegramId={user.id} backendUrl={backendUrl} />} />
         </Routes>
         <Navbar />
       </div>
