@@ -115,30 +115,36 @@ function App() {
     document.body.appendChild(script);
   }, []);
 
-  // Mock Telegram user for desktop testing
+  // Telegram WebApp user init + fetch stats
   useEffect(() => {
-    let telegramUser = window.Telegram?.WebApp?.initDataUnsafe?.user || {
-      id: "123456",
-      first_name: "Test",
-      last_name: "User",
-      username: "testuser",
-      telegramId: "123456",
-    };
-    setUser(telegramUser);
+    const tg = window.Telegram?.WebApp;
+    if (!tg) return console.error("Telegram WebApp not found");
 
-    getUserStats(telegramUser.id)
+    tg.ready();
+    tg.expand();
+
+    const telegramUser = tg.initDataUnsafe?.user;
+    if (!telegramUser) return console.error("Telegram user not found");
+
+    const userObj = {
+      telegramId: telegramUser.id,
+      firstName: telegramUser.first_name,
+      lastName: telegramUser.last_name,
+      username: telegramUser.username,
+    };
+    setUser(userObj);
+
+    getUserStats(userObj.telegramId)
       .then((res) => setStats(res.data))
       .catch((err) => console.error("Failed to fetch stats:", err));
   }, []);
 
+  // Watch Ad handler
   const handleAdClick = () => {
-    if (!adsReady || !user || !stats) return alert("Please wait, ad system loading...");
+    if (!adsReady || !user || !stats) return alert("Ad system loading, wait...");
 
-    updateUserProgress(user.id, "watch_ad", stats.referredBy)
-      .then((res) => {
-        setStats(res.data);
-        alert(`✅ Ad watched! +${res.data.tokenPerTask} VET`);
-      })
+    updateUserProgress(user.telegramId, "watch_ad")
+      .then((res) => setStats(res.data))
       .catch((err) => {
         console.error(err);
         alert(err.response?.data?.error || "Error watching ad");
