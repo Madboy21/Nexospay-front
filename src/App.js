@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import axios from "./api"; // aita api.js file import
+import axios from "./api"; // api.js file import
 import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
 
 import Header from "./components/Header";
@@ -11,51 +11,61 @@ function Home({ user, stats, handleAdClick }) {
   const referralLink = `https://t.me/Nexospay_bot?start=${user.id}`;
 
   return (
-    <div style={{ textAlign: "center" }}>
+    <div style={{ maxWidth: 600, margin: "0 auto", textAlign: "center", padding: 20 }}>
       <Header user={user} balance={stats?.tokens || 0} />
-      <TaskProgress
-        total={stats?.dailyLimit || 20}
-        completed={stats?.tasksToday || 0}
-      />
 
-      {stats?.tasksToday < stats?.dailyLimit ? (
-        <div style={{ marginTop: 20 }}>
+      <div style={{ margin: "20px 0" }}>
+        <TaskProgress total={stats?.dailyLimit || 20} completed={stats?.tasksToday || 0} />
+      </div>
+
+      <div style={{ marginTop: 30, padding: 20, border: "1px solid #0af", borderRadius: 10, background: "#1b1b1b" }}>
+        <h3 style={{ color: "#0af" }}>🎯 Watch Ads & Earn VET</h3>
+        {stats?.tasksToday < stats?.dailyLimit ? (
           <button
             style={{
+              marginTop: 15,
               background: "#0af",
               color: "#fff",
               border: "none",
-              padding: "10px 20px",
-              borderRadius: "5px",
+              padding: "12px 24px",
+              borderRadius: 6,
               cursor: "pointer",
-              fontSize: "16px",
+              fontSize: 16,
             }}
             onClick={handleAdClick}
           >
-            🎯 Watch Ad & Earn
+            Watch Ad & Earn {stats?.tokenPerTask || 1} VET
           </button>
+        ) : (
+          <p style={{ marginTop: 15, color: "#0f0" }}>
+            ✅ All {stats?.dailyLimit} tasks completed today!
+          </p>
+        )}
 
-          <div style={{ marginTop: 20 }}>
-            <p>📢 Share your referral link and earn 10% bonus!</p>
+        <div style={{ marginTop: 25, textAlign: "left" }}>
+          <p style={{ color: "#fff" }}>Referral Link (Earn {stats?.referralBonus || 10}% bonus):</p>
+          <div style={{ display: "flex", alignItems: "center" }}>
             <input
               type="text"
               value={referralLink}
               readOnly
               style={{
-                width: "80%",
-                padding: "8px",
-                borderRadius: "5px",
+                flex: 1,
+                padding: 8,
+                borderRadius: 5,
                 border: "1px solid #0af",
+                background: "#111",
+                color: "#fff",
               }}
             />
             <button
               style={{
-                marginLeft: "10px",
+                marginLeft: 10,
                 padding: "8px 12px",
                 background: "#0af",
                 color: "#fff",
                 border: "none",
-                borderRadius: "5px",
+                borderRadius: 5,
                 cursor: "pointer",
               }}
               onClick={() => navigator.clipboard.writeText(referralLink)}
@@ -64,16 +74,16 @@ function Home({ user, stats, handleAdClick }) {
             </button>
           </div>
         </div>
-      ) : (
-        <p style={{ marginTop: 20 }}>
-          ✅ All {stats?.dailyLimit} tasks completed today!
+
+        <p style={{ marginTop: 20, color: "#ff0" }}>
+          💰 Minimum Withdraw: {stats?.minWithdraw || 100} VET
         </p>
-      )}
+      </div>
     </div>
   );
 }
 
-// Navbar
+// Navbar Component
 function Navbar() {
   return (
     <nav
@@ -84,9 +94,10 @@ function Navbar() {
         background: "#222",
         display: "flex",
         justifyContent: "space-around",
-        padding: "10px 0",
+        padding: "12px 0",
         color: "#0af",
         fontWeight: "bold",
+        boxSizing: "border-box",
       }}
     >
       <Link to="/" style={{ color: "#0af", textDecoration: "none" }}>
@@ -157,20 +168,11 @@ function App() {
     }
   };
 
-  if (!user) return <div style={{ color: "#fff", paddingTop: 40 }}>Loading...</div>;
+  if (!user) return <div style={{ color: "#fff", paddingTop: 50, textAlign: "center" }}>Loading...</div>;
 
   return (
     <Router>
-      <div
-        style={{
-          paddingBottom: 70,
-          color: "#fff",
-          background: "#121212",
-          minHeight: "100vh",
-          padding: 20,
-          boxSizing: "border-box",
-        }}
-      >
+      <div style={{ paddingBottom: 70, color: "#fff", background: "#121212", minHeight: "100vh", boxSizing: "border-box" }}>
         <Routes>
           <Route path="/" element={<Home user={user} stats={stats} handleAdClick={handleAdClick} />} />
           <Route path="/withdraw" element={<Withdraw telegramId={user.id} backendUrl={backendUrl} />} />
