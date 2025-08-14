@@ -1,17 +1,113 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
+import axios from "./api"; // aita api.js file import
 import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
+
 import Header from "./components/Header";
 import TaskProgress from "./components/TaskProgress";
 import Withdraw from "./components/Withdraw";
-import { getUserStats, completeTask, registerUser } from "./utils/api";
 
-function Home({ user }) {
-  const [balance, setBalance] = useState(0);
-  const [completed, setCompleted] = useState(0);
-  const totalTasks = 20;
+// Home Component
+function Home({ user, stats, handleAdClick }) {
+  const referralLink = `https://t.me/Nexospay_bot?start=${user.id}`;
+
+  return (
+    <div style={{ textAlign: "center" }}>
+      <Header user={user} balance={stats?.tokens || 0} />
+      <TaskProgress
+        total={stats?.dailyLimit || 20}
+        completed={stats?.tasksToday || 0}
+      />
+
+      {stats?.tasksToday < stats?.dailyLimit ? (
+        <div style={{ marginTop: 20 }}>
+          <button
+            style={{
+              background: "#0af",
+              color: "#fff",
+              border: "none",
+              padding: "10px 20px",
+              borderRadius: "5px",
+              cursor: "pointer",
+              fontSize: "16px",
+            }}
+            onClick={handleAdClick}
+          >
+            🎯 Watch Ad & Earn
+          </button>
+
+          <div style={{ marginTop: 20 }}>
+            <p>📢 Share your referral link and earn 10% bonus!</p>
+            <input
+              type="text"
+              value={referralLink}
+              readOnly
+              style={{
+                width: "80%",
+                padding: "8px",
+                borderRadius: "5px",
+                border: "1px solid #0af",
+              }}
+            />
+            <button
+              style={{
+                marginLeft: "10px",
+                padding: "8px 12px",
+                background: "#0af",
+                color: "#fff",
+                border: "none",
+                borderRadius: "5px",
+                cursor: "pointer",
+              }}
+              onClick={() => navigator.clipboard.writeText(referralLink)}
+            >
+              Copy
+            </button>
+          </div>
+        </div>
+      ) : (
+        <p style={{ marginTop: 20 }}>
+          ✅ All {stats?.dailyLimit} tasks completed today!
+        </p>
+      )}
+    </div>
+  );
+}
+
+// Navbar
+function Navbar() {
+  return (
+    <nav
+      style={{
+        position: "fixed",
+        bottom: 0,
+        width: "100%",
+        background: "#222",
+        display: "flex",
+        justifyContent: "space-around",
+        padding: "10px 0",
+        color: "#0af",
+        fontWeight: "bold",
+      }}
+    >
+      <Link to="/" style={{ color: "#0af", textDecoration: "none" }}>
+        🏠 Home
+      </Link>
+      <Link to="/withdraw" style={{ color: "#0af", textDecoration: "none" }}>
+        💸 Withdraw
+      </Link>
+    </nav>
+  );
+}
+
+// Main App
+function App() {
+  const [user, setUser] = useState(null);
+  const [stats, setStats] = useState(null);
   const [adsReady, setAdsReady] = useState(false);
 
-  // Monetag SDK load
+  const backendUrl = "https://nexospay-backend.vercel.app";
+
+  // Load Monetag SDK
   useEffect(() => {
     const script = document.createElement("script");
     script.src = "//libtl.com/sdk.js";
@@ -22,82 +118,67 @@ function Home({ user }) {
     document.body.appendChild(script);
   }, []);
 
-  // Fetch user stats
-  useEffect(() => {
-    if (!user) return;
-    registerUser({ telegramId: user.id, username: user.username, firstName: user.first_name, lastName: user.last_name })
-      .then(() => getUserStats(user.id))
-      .then(res => {
-        setBalance(res.data.tokens);
-        setCompleted(res.data.tasksToday);
-      });
-  }, [user]);
-
-  const handleAdClick = async () => {
-    if (!adsReady) return alert("Ads loading...");
-    if (typeof window.show_9712298 === "function") {
-      try {
-        await window.show_9712298();
-        const res = await completeTask(user.id);
-        setBalance(res.data.tokens);
-        setCompleted(res.data.tasksToday);
-        alert("✅ Ad watched! +1 VET");
-      } catch {
-        alert("❌ Ad failed");
-      }
-    }
-  };
-
-  const referralLink = `https://t.me/Nexospay_bot?start=${user?.id}`;
-
-  return (
-    <div>
-      <Header user={user} balance={balance} />
-      <TaskProgress completed={completed} total={totalTasks} />
-      {completed < totalTasks && (
-        <div style={{ textAlign: "center", marginTop: 20 }}>
-          <button
-            onClick={handleAdClick}
-            style={{ padding: "10px 20px", background: "#0af", color: "#fff", border: "none", borderRadius: 5, cursor: "pointer" }}
-          >
-            🎯 Watch Ad & Earn
-          </button>
-          <div style={{ marginTop: 20 }}>
-            <p>📢 Referral Link:</p>
-            <input type="text" readOnly value={referralLink} style={{ width: "80%", padding: 8, borderRadius: 5 }} />
-            <button onClick={() => navigator.clipboard.writeText(referralLink)} style={{ marginLeft: 10, padding: 8, background: "#0af", color: "#fff", border: "none", borderRadius: 5 }}>
-              Copy
-            </button>
-          </div>
-        </div>
-      )}
-      {completed >= totalTasks && <p style={{ textAlign: "center", marginTop: 20 }}>✅ All {totalTasks} tasks completed today!</p>}
-    </div>
-  );
-}
-
-export default function App() {
-  const [user, setUser] = useState(null);
-
+  // Telegram user init + fetch stats
   useEffect(() => {
     const tg = window.Telegram.WebApp;
     tg.ready();
     tg.expand();
     const telegramUser = tg.initDataUnsafe?.user;
+    if (!telegramUser) return;
     setUser(telegramUser);
+
+    // register & fetch stats
+    axios
+      .post("/api/users/register", {
+        telegramId: telegramUser.id,
+        username: telegramUser.username,
+        firstName: telegramUser.first_name,
+        lastName: telegramUser.last_name,
+        referredBy: null,
+      })
+      .then(() => axios.post("/api/users/stats", { telegramId: telegramUser.id }))
+      .then((res) => setStats(res.data))
+      .catch((err) => console.error(err));
   }, []);
+
+  const handleAdClick = () => {
+    if (!adsReady) return alert("Ad system loading... wait a moment");
+    if (typeof window.show_9712298 === "function") {
+      window
+        .show_9712298()
+        .then(() => {
+          // update backend after ad watched
+          axios
+            .post("/api/tasks/complete-task", { telegramId: user.id })
+            .then((res) => setStats(res.data))
+            .catch((err) => console.error(err));
+        })
+        .catch((err) => console.error(err));
+    }
+  };
+
+  if (!user) return <div style={{ color: "#fff", paddingTop: 40 }}>Loading...</div>;
 
   return (
     <Router>
-      <Routes>
-        <Route path="/" element={<Home user={user} />} />
-        <Route path="/withdraw" element={<Withdraw telegramId={user?.id} />} />
-      </Routes>
-      <nav style={{ position: "fixed", bottom: 0, width: "100%", display: "flex", justifyContent: "space-around", background: "#222", color: "#0af", padding: 10 }}>
-        <Link to="/" style={{ color: "#0af" }}>🏠 Home</Link>
-        <Link to="/" style={{ color: "#0af" }}>💰 Earn</Link>
-        <Link to="/withdraw" style={{ color: "#0af" }}>💸 Withdraw</Link>
-      </nav>
+      <div
+        style={{
+          paddingBottom: 70,
+          color: "#fff",
+          background: "#121212",
+          minHeight: "100vh",
+          padding: 20,
+          boxSizing: "border-box",
+        }}
+      >
+        <Routes>
+          <Route path="/" element={<Home user={user} stats={stats} handleAdClick={handleAdClick} />} />
+          <Route path="/withdraw" element={<Withdraw telegramId={user.id} backendUrl={backendUrl} />} />
+        </Routes>
+        <Navbar />
+      </div>
     </Router>
   );
 }
+
+export default App;
