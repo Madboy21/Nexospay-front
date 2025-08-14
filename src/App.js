@@ -159,7 +159,8 @@ function App() {
     }
   };
 
-  if (!user) return <div style={{ color: "#fff", paddingTop: 50, textAlign: "center" }}>Loading...</div>;
+  if (!user)
+    return <div style={{ color: "#fff", paddingTop: 50, textAlign: "center" }}>Loading...</div>;
 
   return (
     <Router>
