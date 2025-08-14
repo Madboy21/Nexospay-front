@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
 import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
+import { getUserStats, updateUserProgress } from "./utils/api";
 
 import Header from "./components/Header";
 import TaskProgress from "./components/TaskProgress";
@@ -102,8 +102,7 @@ function App() {
   const [user, setUser] = useState(null);
   const [stats, setStats] = useState(null);
   const [adsReady, setAdsReady] = useState(false);
-
-  const backendUrl = "https://nexospay-backend.vercel.app/"; // Update to your backend
+  const backendUrl = "https://nexospay-backend.vercel.app/";
 
   // Load Monetag SDK
   useEffect(() => {
@@ -118,28 +117,26 @@ function App() {
 
   // Telegram WebApp init + fetch stats
   useEffect(() => {
-    const tg = window.Telegram.WebApp;
+    const tg = window.Telegram?.WebApp;
+    if (!tg) return console.error("Telegram WebApp not found");
+
     tg.ready();
     tg.expand();
     const telegramUser = tg.initDataUnsafe?.user;
-    if (telegramUser) {
-      setUser(telegramUser);
-      axios
-        .post(`${backendUrl}/api/users/stats`, { telegramId: telegramUser.id })
-        .then((res) => setStats(res.data))
-        .catch((err) => console.error("Failed to fetch stats:", err));
-    }
+    if (!telegramUser) return console.error("Telegram user not found");
+
+    setUser(telegramUser);
+
+    getUserStats(telegramUser.id)
+      .then((res) => setStats(res.data))
+      .catch((err) => console.error("Failed to fetch stats:", err));
   }, []);
 
   // Handle ad click
   const handleAdClick = () => {
     if (!adsReady || !user || !stats) return alert("Please wait, ad system loading...");
 
-    axios
-      .post(`${backendUrl}/api/tasks/completeTask`, {
-        telegramId: user.id,
-        referrerId: stats?.referredBy || null,
-      })
+    updateUserProgress(user.id, "watch_ad", stats.referredBy)
       .then((res) => {
         setStats(res.data);
         alert(`✅ Ad watched! +${res.data.tokenPerTask} VET`);
@@ -182,7 +179,7 @@ function App() {
       >
         <Routes>
           <Route path="/" element={<Home user={user} stats={stats} handleAdClick={handleAdClick} />} />
-          <Route path="/withdraw" element={<Withdraw telegramId={user.id} backendUrl={backendUrl} />} />
+          <Route path="/withdraw" element={<Withdraw telegramId={user.telegramId} backendUrl={backendUrl} />} />
         </Routes>
         <Navbar />
       </div>
