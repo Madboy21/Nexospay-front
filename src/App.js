@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import axios from "./api"; // api.js file import
+import axios from "./api"; // api.js import
 import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
 
 import Header from "./components/Header";
@@ -20,6 +20,7 @@ function Home({ user, stats, handleAdClick }) {
 
       <div style={{ marginTop: 30, padding: 20, border: "1px solid #0af", borderRadius: 10, background: "#1b1b1b" }}>
         <h3 style={{ color: "#0af" }}>🎯 Watch Ads & Earn VET</h3>
+
         {stats?.tasksToday < stats?.dailyLimit ? (
           <button
             style={{
@@ -138,7 +139,6 @@ function App() {
     if (!telegramUser) return;
     setUser(telegramUser);
 
-    // register & fetch stats
     axios
       .post("/api/users/register", {
         telegramId: telegramUser.id,
@@ -158,7 +158,6 @@ function App() {
       window
         .show_9712298()
         .then(() => {
-          // update backend after ad watched
           axios
             .post("/api/tasks/complete-task", { telegramId: user.id })
             .then((res) => setStats(res.data))
