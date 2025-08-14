@@ -1,11 +1,25 @@
 import React, { useEffect, useState } from "react";
 import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
-import { getUserStats, updateUserProgress } from "./utils/api";
 
 import Header from "./components/Header";
 import TaskProgress from "./components/TaskProgress";
 import Withdraw from "./components/Withdraw";
 
+// Mock API functions (replace with real API later)
+const fetchStatsAPI = async (telegramId) => {
+  return {
+    tokens: 50, // mock VET
+    tasksToday: 5,
+    dailyLimit: 20,
+  };
+};
+
+const completeTaskAPI = async (telegramId) => {
+  console.log("Task completed for:", telegramId);
+  return true;
+};
+
+// Home Component
 function Home({ user, stats, handleAdClick }) {
   if (!stats)
     return (
@@ -70,13 +84,7 @@ function Home({ user, stats, handleAdClick }) {
           </div>
         </div>
       ) : (
-        <p
-          style={{
-            textAlign: "center",
-            marginTop: 20,
-            color: "#0af",
-          }}
-        >
+        <p style={{ textAlign: "center", marginTop: 20, color: "#0af" }}>
           ✅ All {stats.dailyLimit} tasks completed today!
         </p>
       )}
@@ -84,6 +92,7 @@ function Home({ user, stats, handleAdClick }) {
   );
 }
 
+// Navbar Component
 function Navbar() {
   return (
     <nav
@@ -113,6 +122,7 @@ function Navbar() {
   );
 }
 
+// Main App
 function App() {
   const [user, setUser] = useState(null);
   const [stats, setStats] = useState(null);
@@ -141,12 +151,8 @@ function App() {
   }, []);
 
   const fetchStats = async (telegramId) => {
-    try {
-      const res = await getUserStats(telegramId);
-      setStats(res.data);
-    } catch (err) {
-      console.error("Failed to fetch stats:", err);
-    }
+    const data = await fetchStatsAPI(telegramId);
+    setStats(data);
   };
 
   const handleAdClick = async () => {
@@ -156,21 +162,19 @@ function App() {
     if (typeof window.show_9712298 === "function") {
       window.show_9712298()
         .then(async () => {
-          try {
-            await updateUserProgress(user.id, "Ad Task");
-            fetchStats(user.id); // refresh stats
-            alert("✅ Ad watched! 1 VET added.");
-          } catch (err) {
-            console.error(err);
-            alert("Failed to update task.");
-          }
+          await completeTaskAPI(user.id);
+          fetchStats(user.id); // refresh stats
+          alert("✅ Ad watched! 1 VET added.");
         })
         .catch((err) => {
           console.error("Ad failed:", err);
           alert("Ad could not be shown. Try again later.");
         });
     } else {
-      alert("Ad function not available yet.");
+      // fallback: mock task complete
+      await completeTaskAPI(user.id);
+      fetchStats(user.id);
+      alert("✅ Ad watched! 1 VET added (mock).");
     }
   };
 
