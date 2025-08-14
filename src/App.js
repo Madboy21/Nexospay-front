@@ -115,16 +115,15 @@ function App() {
     document.body.appendChild(script);
   }, []);
 
-  // Telegram WebApp init + fetch stats
+  // Mock Telegram user for desktop testing
   useEffect(() => {
-    const tg = window.Telegram?.WebApp;
-    if (!tg) return console.error("Telegram WebApp not found");
-
-    tg.ready();
-    tg.expand();
-    const telegramUser = tg.initDataUnsafe?.user;
-    if (!telegramUser) return console.error("Telegram user not found");
-
+    let telegramUser = window.Telegram?.WebApp?.initDataUnsafe?.user || {
+      id: "123456",
+      first_name: "Test",
+      last_name: "User",
+      username: "testuser",
+      telegramId: "123456",
+    };
     setUser(telegramUser);
 
     getUserStats(telegramUser.id)
@@ -132,7 +131,6 @@ function App() {
       .catch((err) => console.error("Failed to fetch stats:", err));
   }, []);
 
-  // Handle ad click
   const handleAdClick = () => {
     if (!adsReady || !user || !stats) return alert("Please wait, ad system loading...");
 
