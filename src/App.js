@@ -6,6 +6,7 @@ import Header from "./components/Header";
 import TaskProgress from "./components/TaskProgress";
 import Withdraw from "./components/Withdraw";
 
+// Home Component
 function Home({ user, balance, completed, totalTasks, handleAdClick }) {
   return (
     <>
@@ -13,7 +14,18 @@ function Home({ user, balance, completed, totalTasks, handleAdClick }) {
       <TaskProgress total={totalTasks} completed={completed} />
       {completed < totalTasks ? (
         <div style={{ textAlign: "center", marginTop: 20 }}>
-          <button onClick={handleAdClick} style={{padding:'10px 20px', borderRadius:5, background:'#0af', color:'#fff'}}>
+          <button
+            style={{
+              background: "#0af",
+              color: "#fff",
+              border: "none",
+              padding: "10px 20px",
+              borderRadius: "5px",
+              cursor: "pointer",
+              fontSize: "16px",
+            }}
+            onClick={handleAdClick}
+          >
             🎯 Watch Ad & Earn
           </button>
         </div>
@@ -26,34 +38,57 @@ function Home({ user, balance, completed, totalTasks, handleAdClick }) {
   );
 }
 
+// Navbar Component
 function Navbar() {
   return (
-    <nav style={{position:'fixed', bottom:0, width:'100%', display:'flex', justifyContent:'space-around', background:'#222', padding:'10px 0', color:'#0af'}}>
-      <Link to="/" style={{ color: "#0af", textDecoration: "none" }}>🏠 Home</Link>
-      <Link to="/" style={{ color: "#0af", textDecoration: "none" }}>💰 Earn</Link>
-      <Link to="/withdraw" style={{ color: "#0af", textDecoration: "none" }}>💸 Withdraw</Link>
+    <nav
+      style={{
+        position: "fixed",
+        bottom: 0,
+        width: "100%",
+        background: "#222",
+        display: "flex",
+        justifyContent: "space-around",
+        padding: "10px 0",
+        color: "#0af",
+        fontWeight: "bold",
+        boxSizing: "border-box",
+      }}
+    >
+      <Link to="/" style={{ color: "#0af", textDecoration: "none", padding: "10px" }}>
+        🏠 Home
+      </Link>
+      <Link to="/" style={{ color: "#0af", textDecoration: "none", padding: "10px" }}>
+        💰 Earn
+      </Link>
+      <Link to="/withdraw" style={{ color: "#0af", textDecoration: "none", padding: "10px" }}>
+        💸 Withdraw
+      </Link>
     </nav>
   );
 }
 
+// Main App
 function App() {
   const [user, setUser] = useState(null);
   const [balance, setBalance] = useState(0);
   const [completed, setCompleted] = useState(0);
   const [adsReady, setAdsReady] = useState(false);
   const totalTasks = 20;
-  const backendUrl = "https://your-backend-domain.com"; // change accordingly
+  const backendUrl = "https://nexospay-backend.vercel.app/"; // Backend URL
 
-  // Load Monetag script
+  // Load Monetag SDK
   useEffect(() => {
     const script = document.createElement("script");
-    script.src = "https://a.monetag.com/tag/9712298.js"; 
+    script.src = "//libtl.com/sdk.js";
+    script.dataset.zone = "9712298";
+    script.dataset.sdk = "show_9712298";
     script.async = true;
     script.onload = () => setAdsReady(true);
     document.body.appendChild(script);
   }, []);
 
-  // Telegram user register
+  // Telegram init + fetch user data
   useEffect(() => {
     const tg = window.Telegram.WebApp;
     tg.ready();
@@ -62,58 +97,120 @@ function App() {
     setUser(telegramUser);
 
     if (telegramUser) {
-      // Check if referral exists
-      const params = new URLSearchParams(window.location.search);
-      const referredBy = params.get("ref");
-
-      axios.post(`${backendUrl}/api/user/register`, {
-        telegramId: telegramUser.id,
-        first_name: telegramUser.first_name,
-        username: telegramUser.username,
-        referredBy,
-      }).then(res => {
-        setBalance(res.data.balance || 0);
-        setCompleted(res.data.completed || 0);
-      }).catch(console.error);
+      axios
+        .get(`${backendUrl}/api/user/${telegramUser.id}`)
+        .then((res) => {
+          if (res.data) {
+            setBalance(res.data.balance || 0);
+            setCompleted(res.data.completed || 0);
+          }
+        })
+        .catch((err) => console.error("Failed to fetch user data:", err));
     }
   }, []);
 
+  // Save progress
   const saveProgress = (newCompleted, newBalance) => {
     if (!user) return;
-    axios.post(`${backendUrl}/api/user/update`, {
-      telegramId: user.id,
-      completed: newCompleted,
-      balance: newBalance,
-    }).catch(console.error);
+    axios
+      .post(`${backendUrl}/api/user/update`, {
+        telegramId: user.id,
+        completed: newCompleted,
+        balance: newBalance,
+      })
+      .catch((err) => console.error("Failed to save progress:", err));
   };
 
+  // Complete task
   const handleComplete = () => {
     const newCompleted = completed + 1;
     const newBalance = balance + 1;
+
     setCompleted(newCompleted);
     setBalance(newBalance);
+
     saveProgress(newCompleted, newBalance);
   };
 
+  // Referral reward (8%)
+  const handleReferralReward = (referrerId) => {
+    if (!referrerId) return;
+    axios
+      .post(`${backendUrl}/api/user/referral`, {
+        referrerId,
+        reward: 0.08, // 8%
+      })
+      .then(() => console.log("Referral rewarded"))
+      .catch((err) => console.error(err));
+  };
+
+  // Watch Ad
   const handleAdClick = () => {
-    if (!adsReady) { alert("Ad loading..."); return; }
+    if (!adsReady) return alert("Ad system loading... wait a few seconds.");
+
     if (typeof window.show_9712298 === "function") {
-      window.show_9712298()
-        .then(() => { handleComplete(); alert("✅ Ad watched! 1 VET added."); })
-        .catch(err => { console.error(err); alert("Ad failed"); });
+      window
+        .show_9712298()
+        .then(() => {
+          handleComplete();
+          alert("✅ Ad watched! 1 VET added.");
+        })
+        .catch((err) => {
+          console.error("Ad failed:", err);
+          alert("Ad could not be shown. Try again later.");
+        });
     } else {
-      alert("Ad not ready");
+      alert("Ad function not available yet.");
     }
   };
 
-  if (!user) return <div style={{ paddingTop: 40, color: "#fff", background: "#121212", height: "100vh", textAlign: "center" }}>Loading...</div>;
+  if (!user)
+    return (
+      <div
+        style={{
+          paddingTop: 40,
+          color: "#fff",
+          background: "#121212",
+          height: "100vh",
+          textAlign: "center",
+        }}
+      >
+        Loading...
+      </div>
+    );
 
   return (
     <Router>
-      <div style={{paddingBottom:70, color:'#fff', background:'#121212', minHeight:'100vh', padding:20, boxSizing:'border-box'}}>
+      <div
+        style={{
+          paddingBottom: 70,
+          color: "#fff",
+          background: "#121212",
+          minHeight: "100vh",
+          fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+          paddingTop: 20,
+          paddingLeft: 20,
+          paddingRight: 20,
+          boxSizing: "border-box",
+        }}
+      >
         <Routes>
-          <Route path="/" element={<Home user={user} balance={balance} completed={completed} totalTasks={totalTasks} handleAdClick={handleAdClick} />} />
-          <Route path="/withdraw" element={<Withdraw telegramId={user.id} backendUrl={backendUrl} />} />
+          <Route
+            path="/"
+            element={
+              <Home
+                user={user}
+                balance={balance}
+                completed={completed}
+                totalTasks={totalTasks}
+                handleAdClick={handleAdClick}
+              />
+            }
+          />
+          <Route
+            path="/withdraw"
+            element={<Withdraw telegramId={user.id} backendUrl={backendUrl} />}
+          />
         </Routes>
         <Navbar />
       </div>
