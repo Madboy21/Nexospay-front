@@ -1,12 +1,8 @@
-import React from 'react';
-
-const Header = ({ user, balance }) => {
+export default function Header(){
   return (
-    <div style={{ textAlign: 'center', padding: 20 }}>
-      <h2>👋 Welcome, {user?.first_name}</h2>
-      <p>💰 Balance: <strong>{balance} VET</strong></p>
-    </div>
+    <header style={{padding:"10px", background:"#222", color:"#fff", textAlign:"center"}}>
+      <h1>Nexos Pay Mini App</h1>
+    </header>
   );
-};
+}
 
-export default Header;
