@@ -1,25 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
+import axios from "axios";
 
 import Header from "./components/Header";
 import TaskProgress from "./components/TaskProgress";
 import Withdraw from "./components/Withdraw";
 
-// Mock API functions (replace with real API later)
-const fetchStatsAPI = async (telegramId) => {
-  return {
-    tokens: 50, // mock VET
-    tasksToday: 5,
-    dailyLimit: 20,
-  };
-};
+const backendUrl = "http://localhost:5000"; // Change to your backend URL
 
-const completeTaskAPI = async (telegramId) => {
-  console.log("Task completed for:", telegramId);
-  return true;
-};
-
-// Home Component
+// Home Page Component
 function Home({ user, stats, handleAdClick }) {
   if (!stats)
     return (
@@ -52,6 +41,7 @@ function Home({ user, stats, handleAdClick }) {
             🎯 Watch Ad & Earn
           </button>
 
+          {/* Referral Section */}
           <div style={{ marginTop: 20 }}>
             <p style={{ color: "#fff" }}>
               📢 Share your referral link and earn 10% from friends!
@@ -150,48 +140,70 @@ function App() {
     if (telegramUser) fetchStats(telegramUser.id);
   }, []);
 
+  // Fetch stats from backend
   const fetchStats = async (telegramId) => {
-    const data = await fetchStatsAPI(telegramId);
-    setStats(data);
-  };
-
-  const handleAdClick = async () => {
-    if (!adsReady) return alert("Ad system loading... Please wait a few seconds.");
-    if (!user) return;
-
-    if (typeof window.show_9712298 === "function") {
-      window.show_9712298()
-        .then(async () => {
-          await completeTaskAPI(user.id);
-          fetchStats(user.id); // refresh stats
-          alert("✅ Ad watched! 1 VET added.");
-        })
-        .catch((err) => {
-          console.error("Ad failed:", err);
-          alert("Ad could not be shown. Try again later.");
-        });
-    } else {
-      // fallback: mock task complete
-      await completeTaskAPI(user.id);
-      fetchStats(user.id);
-      alert("✅ Ad watched! 1 VET added (mock).");
+    try {
+      const res = await axios.post(`${backendUrl}/api/users/stats`, { telegramId });
+      setStats(res.data);
+    } catch (err) {
+      console.error("Failed to fetch stats:", err);
     }
   };
 
-  if (!user) {
+  // Handle ad click → update tokens + tasks
+  const handleAdClick = async () => {
+    if (!adsReady) return alert("Ad system loading...");
+    if (!user) return;
+
+    try {
+      if (typeof window.show_9712298 === "function") await window.show_9712298();
+
+      const res = await axios.post(`${backendUrl}/api/users/completeTask`, {
+        telegramId: user.id,
+        referrerId: user.referrerId || null,
+      });
+
+      setStats(res.data); // LIVE update
+      alert("✅ Ad watched! Token added.");
+    } catch (err) {
+      console.error(err);
+      alert(err.response?.data?.error || "Ad failed, try again later.");
+    }
+  };
+
+  if (!user)
     return (
-      <div style={{ paddingTop: 40, color: "#fff", background: "#121212", height: "100vh", textAlign: "center" }}>
+      <div
+        style={{
+          paddingTop: 40,
+          color: "#fff",
+          background: "#121212",
+          height: "100vh",
+          textAlign: "center",
+        }}
+      >
         Loading Telegram user...
       </div>
     );
-  }
 
   return (
     <Router>
-      <div style={{ paddingBottom: 70, color: "#fff", background: "#121212", minHeight: "100vh", fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif", paddingTop: 20, paddingLeft: 20, paddingRight: 20, boxSizing: "border-box" }}>
+      <div
+        style={{
+          paddingBottom: 70,
+          color: "#fff",
+          background: "#121212",
+          minHeight: "100vh",
+          fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+          paddingTop: 20,
+          paddingLeft: 20,
+          paddingRight: 20,
+          boxSizing: "border-box",
+        }}
+      >
         <Routes>
           <Route path="/" element={<Home user={user} stats={stats} handleAdClick={handleAdClick} />} />
-          <Route path="/withdraw" element={<Withdraw telegramId={user.id} />} />
+          <Route path="/withdraw" element={<Withdraw telegramId={user.id} backendUrl={backendUrl} />} />
         </Routes>
         <Navbar />
       </div>
