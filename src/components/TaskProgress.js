@@ -1,10 +1,20 @@
-export default function TaskProgress({stats}){
-  const progress = stats ? (stats.tasksToday / stats.dailyLimit)*100 : 0;
+import React from "react";
+
+export default function TaskProgress({ total, completed }) {
+  const percent = Math.floor((completed / total) * 100);
   return (
-    <div style={{padding:"10px"}}>
-      <div>Daily Tasks: {stats?.tasksToday || 0}/{stats?.dailyLimit || 0}</div>
-      <div style={{background:"#ccc", height:"10px", width:"100%"}}>
-        <div style={{width:`${progress}%`, height:"10px", background:"#4caf50"}}></div>
+    <div style={{ marginBottom: 20 }}>
+      <p>
+        Tasks Completed: {completed} / {total} ({percent}%)
+      </p>
+      <div style={{ background: "#333", borderRadius: 5, overflow: "hidden" }}>
+        <div
+          style={{
+            width: `${percent}%`,
+            height: 20,
+            background: "#0af",
+          }}
+        ></div>
       </div>
     </div>
   );
