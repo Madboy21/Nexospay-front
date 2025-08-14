@@ -1,14 +1,15 @@
-// src/App.js
 import React, { useEffect, useState } from "react";
 import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
-import api, { getUserStats, registerUser, updateUserProgress } from "./utils/api";
+import { registerUser, getUserStats, updateUserProgress } from "./utils/api";
 import Header from "./components/Header";
 import TaskProgress from "./components/TaskProgress";
 import Withdraw from "./components/Withdraw";
 
 function Home({ user, stats, handleAdClick }) {
   const referralLink = `https://t.me/Nexospay_bot?start=${user.id}`;
-  if (!stats) return <p style={{ color: "#fff", textAlign: "center", marginTop: 50 }}>Loading stats...</p>;
+
+  if (!stats)
+    return <p style={{ color: "#fff", textAlign: "center", marginTop: 50 }}>Loading stats...</p>;
 
   const tasksRemaining = stats.dailyLimit - stats.tasksToday;
 
@@ -73,7 +74,9 @@ function Home({ user, stats, handleAdClick }) {
         </div>
       </div>
 
-      <p style={{ marginTop: 20, color: "#ff0" }}>💰 Minimum Withdraw: {stats.minWithdraw} VET</p>
+      <p style={{ marginTop: 20, color: "#ff0" }}>
+        💰 Minimum Withdraw: {stats.minWithdraw} VET
+      </p>
     </div>
   );
 }
@@ -94,8 +97,12 @@ function Navbar() {
         boxSizing: "border-box",
       }}
     >
-      <Link to="/" style={{ color: "#0af", textDecoration: "none" }}>🏠 Home</Link>
-      <Link to="/withdraw" style={{ color: "#0af", textDecoration: "none" }}>💸 Withdraw</Link>
+      <Link to="/" style={{ color: "#0af", textDecoration: "none" }}>
+        🏠 Home
+      </Link>
+      <Link to="/withdraw" style={{ color: "#0af", textDecoration: "none" }}>
+        💸 Withdraw
+      </Link>
     </nav>
   );
 }
@@ -141,7 +148,8 @@ function App() {
   const handleAdClick = () => {
     if (!adsReady) return alert("Ad system loading... wait a moment");
     if (typeof window.show_9712298 === "function") {
-      window.show_9712298()
+      window
+        .show_9712298()
         .then(() => {
           updateUserProgress(user.id)
             .then((res) => setStats(res.data))
@@ -155,7 +163,15 @@ function App() {
 
   return (
     <Router>
-      <div style={{ paddingBottom: 70, color: "#fff", background: "#121212", minHeight: "100vh", boxSizing: "border-box" }}>
+      <div
+        style={{
+          paddingBottom: 70,
+          color: "#fff",
+          background: "#121212",
+          minHeight: "100vh",
+          boxSizing: "border-box",
+        }}
+      >
         <Routes>
           <Route path="/" element={<Home user={user} stats={stats} handleAdClick={handleAdClick} />} />
           <Route path="/withdraw" element={<Withdraw telegramId={user.id} />} />
