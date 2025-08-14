@@ -1,7 +1,6 @@
 // App.js
 import React, { useEffect, useState } from "react";
-// Correct path to api.js
-import api, { getUserStats, registerUser, updateUserProgress } from "./utils/api"; 
+import api, { getUserStats, registerUser, updateUserProgress } from "./utils/api";
 import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
 
 import Header from "./components/Header";
@@ -12,21 +11,19 @@ import Withdraw from "./components/Withdraw";
 function Home({ user, stats, handleAdClick }) {
   const referralLink = `https://t.me/Nexospay_bot?start=${user.id}`;
 
+  if (!stats) return <p style={{ color: "#fff", textAlign: "center", marginTop: 50 }}>Loading stats...</p>;
+
+  const tasksRemaining = stats.dailyLimit - stats.tasksToday;
+
   return (
     <div style={{ maxWidth: 600, margin: "0 auto", textAlign: "center", padding: 20 }}>
-      <Header user={user} balance={stats?.tokens || 0} />
+      <Header user={user} balance={stats.tokens || 0} />
+      <TaskProgress total={stats.dailyLimit} completed={stats.tasksToday} />
 
-      <div style={{ margin: "20px 0" }}>
-        <TaskProgress total={stats?.dailyLimit || 20} completed={stats?.tasksToday || 0} />
-      </div>
-
-      <div style={{ marginTop: 30, padding: 20, border: "1px solid #0af", borderRadius: 10, background: "#1b1b1b" }}>
-        <h3 style={{ color: "#0af" }}>🎯 Watch Ads & Earn VET</h3>
-
-        {stats?.tasksToday < stats?.dailyLimit ? (
+      <div style={{ marginTop: 20 }}>
+        {tasksRemaining > 0 ? (
           <button
             style={{
-              marginTop: 15,
               background: "#0af",
               color: "#fff",
               border: "none",
@@ -37,51 +34,50 @@ function Home({ user, stats, handleAdClick }) {
             }}
             onClick={handleAdClick}
           >
-            Watch Ad & Earn {stats?.tokenPerTask || 1} VET
+            🎯 Watch Ad & Earn {stats.tokenPerTask} VET
           </button>
         ) : (
-          <p style={{ marginTop: 15, color: "#0f0" }}>
-            ✅ All {stats?.dailyLimit} tasks completed today!
+          <p style={{ color: "#0f0", marginTop: 20 }}>
+            ✅ All {stats.dailyLimit} tasks completed today!
           </p>
         )}
-
-        <div style={{ marginTop: 25, textAlign: "left" }}>
-          <p style={{ color: "#fff" }}>Referral Link (Earn {stats?.referralBonus || 10}% bonus):</p>
-          <div style={{ display: "flex", alignItems: "center" }}>
-            <input
-              type="text"
-              value={referralLink}
-              readOnly
-              style={{
-                flex: 1,
-                padding: 8,
-                borderRadius: 5,
-                border: "1px solid #0af",
-                background: "#111",
-                color: "#fff",
-              }}
-            />
-            <button
-              style={{
-                marginLeft: 10,
-                padding: "8px 12px",
-                background: "#0af",
-                color: "#fff",
-                border: "none",
-                borderRadius: 5,
-                cursor: "pointer",
-              }}
-              onClick={() => navigator.clipboard.writeText(referralLink)}
-            >
-              Copy
-            </button>
-          </div>
-        </div>
-
-        <p style={{ marginTop: 20, color: "#ff0" }}>
-          💰 Minimum Withdraw: {stats?.minWithdraw || 100} VET
-        </p>
       </div>
+
+      {/* Referral Section */}
+      <div style={{ marginTop: 30, textAlign: "left" }}>
+        <p style={{ color: "#fff" }}>Referral Link (Earn {stats.referralBonus}% bonus):</p>
+        <div style={{ display: "flex", alignItems: "center" }}>
+          <input
+            type="text"
+            value={referralLink}
+            readOnly
+            style={{
+              flex: 1,
+              padding: 8,
+              borderRadius: 5,
+              border: "1px solid #0af",
+              background: "#111",
+              color: "#fff",
+            }}
+          />
+          <button
+            style={{
+              marginLeft: 10,
+              padding: "8px 12px",
+              background: "#0af",
+              color: "#fff",
+              border: "none",
+              borderRadius: 5,
+              cursor: "pointer",
+            }}
+            onClick={() => navigator.clipboard.writeText(referralLink)}
+          >
+            Copy
+          </button>
+        </div>
+      </div>
+
+      <p style={{ marginTop: 20, color: "#ff0" }}>💰 Minimum Withdraw: {stats.minWithdraw} VET</p>
     </div>
   );
 }
@@ -103,12 +99,8 @@ function Navbar() {
         boxSizing: "border-box",
       }}
     >
-      <Link to="/" style={{ color: "#0af", textDecoration: "none" }}>
-        🏠 Home
-      </Link>
-      <Link to="/withdraw" style={{ color: "#0af", textDecoration: "none" }}>
-        💸 Withdraw
-      </Link>
+      <Link to="/" style={{ color: "#0af", textDecoration: "none" }}>🏠 Home</Link>
+      <Link to="/withdraw" style={{ color: "#0af", textDecoration: "none" }}>💸 Withdraw</Link>
     </nav>
   );
 }
@@ -154,8 +146,7 @@ function App() {
   const handleAdClick = () => {
     if (!adsReady) return alert("Ad system loading... wait a moment");
     if (typeof window.show_9712298 === "function") {
-      window
-        .show_9712298()
+      window.show_9712298()
         .then(() => {
           updateUserProgress(user.id)
             .then((res) => setStats(res.data))
@@ -165,8 +156,7 @@ function App() {
     }
   };
 
-  if (!user)
-    return <div style={{ color: "#fff", paddingTop: 50, textAlign: "center" }}>Loading...</div>;
+  if (!user) return <div style={{ color: "#fff", paddingTop: 50, textAlign: "center" }}>Loading...</div>;
 
   return (
     <Router>
