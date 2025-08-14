@@ -1,14 +1,18 @@
 import React, { useEffect, useState } from "react";
 import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
-import api, { getUserStats, updateUserProgress } from "./utils/api";
+import { getUserStats, updateUserProgress } from "./utils/api";
 
 import Header from "./components/Header";
 import TaskProgress from "./components/TaskProgress";
 import Withdraw from "./components/Withdraw";
 
-// Home Component
 function Home({ user, stats, handleAdClick }) {
-  if (!stats) return <p style={{ textAlign: "center", color: "#fff" }}>Loading stats...</p>;
+  if (!stats)
+    return (
+      <p style={{ textAlign: "center", color: "#fff", marginTop: 50 }}>
+        Loading stats...
+      </p>
+    );
 
   const referralLink = `https://t.me/Nexospay_bot?start=${user.id}`;
 
@@ -35,7 +39,9 @@ function Home({ user, stats, handleAdClick }) {
           </button>
 
           <div style={{ marginTop: 20 }}>
-            <p style={{ color: "#fff" }}>📢 Share your referral link and earn 10% from friends!</p>
+            <p style={{ color: "#fff" }}>
+              📢 Share your referral link and earn 10% from friends!
+            </p>
             <input
               type="text"
               value={referralLink}
@@ -64,7 +70,13 @@ function Home({ user, stats, handleAdClick }) {
           </div>
         </div>
       ) : (
-        <p style={{ textAlign: "center", marginTop: 20, color: "#0af" }}>
+        <p
+          style={{
+            textAlign: "center",
+            marginTop: 20,
+            color: "#0af",
+          }}
+        >
           ✅ All {stats.dailyLimit} tasks completed today!
         </p>
       )}
@@ -72,7 +84,6 @@ function Home({ user, stats, handleAdClick }) {
   );
 }
 
-// Navbar Component
 function Navbar() {
   return (
     <nav
@@ -102,7 +113,6 @@ function Navbar() {
   );
 }
 
-// Main App
 function App() {
   const [user, setUser] = useState(null);
   const [stats, setStats] = useState(null);
@@ -144,8 +154,7 @@ function App() {
     if (!user) return;
 
     if (typeof window.show_9712298 === "function") {
-      window
-        .show_9712298()
+      window.show_9712298()
         .then(async () => {
           try {
             await updateUserProgress(user.id, "Ad Task");
@@ -165,7 +174,13 @@ function App() {
     }
   };
 
-  if (!user) return <div style={{ paddingTop: 40, color: "#fff", background: "#121212", height: "100vh", textAlign: "center" }}>Loading...</div>;
+  if (!user) {
+    return (
+      <div style={{ paddingTop: 40, color: "#fff", background: "#121212", height: "100vh", textAlign: "center" }}>
+        Loading Telegram user...
+      </div>
+    );
+  }
 
   return (
     <Router>
