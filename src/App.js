@@ -9,7 +9,6 @@ import {
 
 import Header from "./components/Header";
 import TaskProgress from "./components/TaskProgress";
-import AdViewer from "./components/AdViewer";
 import Withdraw from "./components/Withdraw";
 
 function Home({ user, balance, completed, totalTasks, handleAdClick }) {
@@ -76,9 +75,26 @@ function App() {
   const [user, setUser] = useState(null);
   const [balance, setBalance] = useState(0);
   const [completed, setCompleted] = useState(0);
+  const [adsReady, setAdsReady] = useState(false);
   const totalTasks = 20;
-  const backendUrl = "http://localhost:5000"; // Change to your backend URL
+  const backendUrl = "https://nexospay-backend.vercel.app/"; // Change to your backend URL
 
+  // ✅ Load Monetag Script once
+  useEffect(() => {
+    const script = document.createElement("script");
+    script.src = "https://a.monetag.com/tag/9712298.js"; // Monetag এর দেওয়া আসল script link
+    script.async = true;
+    script.onload = () => {
+      console.log("✅ Monetag script loaded");
+      setAdsReady(true);
+    };
+    script.onerror = () => {
+      console.error("❌ Failed to load Monetag script");
+    };
+    document.body.appendChild(script);
+  }, []);
+
+  // ✅ Load Telegram user data
   useEffect(() => {
     const tg = window.Telegram.WebApp;
     tg.ready();
@@ -124,8 +140,12 @@ function App() {
     saveProgress(newCompleted, newBalance);
   };
 
-  // 📌 Monetag Ad Trigger
+  // 📌 Trigger Monetag Ad
   const handleAdClick = () => {
+    if (!adsReady) {
+      alert("Ad system loading... Please wait a few seconds.");
+      return;
+    }
     if (typeof window.show_9712298 === "function") {
       window
         .show_9712298()
@@ -138,7 +158,7 @@ function App() {
           alert("Ad could not be shown. Please try again later.");
         });
     } else {
-      alert("Ad system not loaded yet. Try again in a moment.");
+      alert("Ad function not available yet.");
     }
   };
 
