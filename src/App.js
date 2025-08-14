@@ -1,5 +1,7 @@
+// App.js
 import React, { useEffect, useState } from "react";
-import axios from "./api"; // api.js import
+// Correct path to api.js
+import api, { getUserStats, registerUser, updateUserProgress } from "./utils/api"; 
 import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
 
 import Header from "./components/Header";
@@ -117,8 +119,6 @@ function App() {
   const [stats, setStats] = useState(null);
   const [adsReady, setAdsReady] = useState(false);
 
-  const backendUrl = "https://nexospay-backend.vercel.app";
-
   // Load Monetag SDK
   useEffect(() => {
     const script = document.createElement("script");
@@ -139,15 +139,14 @@ function App() {
     if (!telegramUser) return;
     setUser(telegramUser);
 
-    axios
-      .post("/api/users/register", {
-        telegramId: telegramUser.id,
-        username: telegramUser.username,
-        firstName: telegramUser.first_name,
-        lastName: telegramUser.last_name,
-        referredBy: null,
-      })
-      .then(() => axios.post("/api/users/stats", { telegramId: telegramUser.id }))
+    registerUser({
+      telegramId: telegramUser.id,
+      username: telegramUser.username,
+      firstName: telegramUser.first_name,
+      lastName: telegramUser.last_name,
+      referredBy: null,
+    })
+      .then(() => getUserStats(telegramUser.id))
       .then((res) => setStats(res.data))
       .catch((err) => console.error(err));
   }, []);
@@ -158,8 +157,7 @@ function App() {
       window
         .show_9712298()
         .then(() => {
-          axios
-            .post("/api/tasks/complete-task", { telegramId: user.id })
+          updateUserProgress(user.id)
             .then((res) => setStats(res.data))
             .catch((err) => console.error(err));
         })
@@ -167,14 +165,15 @@ function App() {
     }
   };
 
-  if (!user) return <div style={{ color: "#fff", paddingTop: 50, textAlign: "center" }}>Loading...</div>;
+  if (!user)
+    return <div style={{ color: "#fff", paddingTop: 50, textAlign: "center" }}>Loading...</div>;
 
   return (
     <Router>
       <div style={{ paddingBottom: 70, color: "#fff", background: "#121212", minHeight: "100vh", boxSizing: "border-box" }}>
         <Routes>
           <Route path="/" element={<Home user={user} stats={stats} handleAdClick={handleAdClick} />} />
-          <Route path="/withdraw" element={<Withdraw telegramId={user.id} backendUrl={backendUrl} />} />
+          <Route path="/withdraw" element={<Withdraw telegramId={user.id} />} />
         </Routes>
         <Navbar />
       </div>
