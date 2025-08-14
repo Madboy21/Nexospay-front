@@ -1,41 +1,43 @@
 import React, { useState } from "react";
 import { withdrawRequest } from "../utils/api";
 
-export default function Withdraw({ telegramId, backendUrl }) {
+export default function Withdraw({ telegramId }) {
   const [amount, setAmount] = useState("");
   const [binanceUID, setBinanceUID] = useState("");
+  const [message, setMessage] = useState("");
 
   const handleWithdraw = async () => {
-    if (!amount || !binanceUID) return alert("Fill all fields");
+    if (!amount || !binanceUID) return setMessage("All fields are required");
     try {
-      const res = await withdrawRequest(telegramId, amount, binanceUID);
-      alert(res.data.message || "Withdraw request sent!");
+      await withdrawRequest(telegramId, Number(amount), binanceUID);
+      setMessage("✅ Withdraw request sent!");
+      setAmount("");
+      setBinanceUID("");
     } catch (err) {
-      console.error(err);
-      alert("Withdraw failed");
+      setMessage("❌ Error sending request");
     }
   };
 
   return (
-    <div style={{ textAlign: "center", marginTop: 30 }}>
-      <h3>Withdraw VET</h3>
+    <div style={{ textAlign: "center", marginTop: 50 }}>
+      <h3>Withdraw VET Tokens</h3>
       <input
-        type="number"
         placeholder="Amount"
+        type="number"
         value={amount}
         onChange={(e) => setAmount(e.target.value)}
-        style={{ margin: 5, padding: 5 }}
+        style={{ margin: 5, padding: 8 }}
       />
       <input
-        type="text"
         placeholder="Binance UID"
         value={binanceUID}
         onChange={(e) => setBinanceUID(e.target.value)}
-        style={{ margin: 5, padding: 5 }}
+        style={{ margin: 5, padding: 8 }}
       />
-      <button onClick={handleWithdraw} style={{ marginLeft: 10, padding: "5px 10px" }}>
+      <button onClick={handleWithdraw} style={{ margin: 5, padding: "8px 12px", cursor: "pointer" }}>
         Withdraw
       </button>
+      <p>{message}</p>
     </div>
   );
 }
