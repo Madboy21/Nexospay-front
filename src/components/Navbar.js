@@ -1,23 +1,11 @@
-import React from 'react';
-
-const Navbar = () => {
+export default function Navbar({stats, onCompleteTask, onWithdraw}){
   return (
-    <div style={{
-      position: 'fixed',
-      bottom: 0,
-      left: 0,
-      width: '100%',
-      background: '#222',
-      display: 'flex',
-      justifyContent: 'space-around',
-      padding: 10
-    }}>
-      <button>🏠 Home</button>
-      <button>🎯 Earn</button>
-      <button>💸 Withdraw</button>
-      <button>👤 Profile</button>
-    </div>
+    <nav style={{padding:"10px", display:"flex", justifyContent:"space-around", background:"#333", color:"#fff"}}>
+      <button onClick={onCompleteTask}>Complete Task</button>
+      <button onClick={onWithdraw}>Withdraw</button>
+      <div>Tokens: {stats?.tokens || 0}</div>
+      <div>Completed: {stats?.completedTasks || 0}</div>
+    </nav>
   );
-};
+}
 
-export default Navbar;
