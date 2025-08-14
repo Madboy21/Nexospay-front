@@ -8,12 +8,12 @@ import Withdraw from "./components/Withdraw";
 
 const backendUrl = "http://localhost:5000"; // Change to your backend URL
 
-// Home Page Component
+// Home Component
 function Home({ user, stats, handleAdClick }) {
   if (!stats)
     return (
       <p style={{ textAlign: "center", color: "#fff", marginTop: 50 }}>
-        Loading stats...
+        Fetching stats...
       </p>
     );
 
@@ -132,12 +132,16 @@ function App() {
   // Telegram user init + fetch stats
   useEffect(() => {
     const tg = window.Telegram?.WebApp;
-    tg?.ready();
-    tg?.expand();
-    const telegramUser = tg?.initDataUnsafe?.user;
-    setUser(telegramUser);
+    if (!tg) return;
 
-    if (telegramUser) fetchStats(telegramUser.id);
+    tg.ready();
+    tg.expand();
+
+    const telegramUser = tg.initDataUnsafe?.user;
+    if (!telegramUser) return;
+
+    setUser(telegramUser);
+    fetchStats(telegramUser.id);
   }, []);
 
   // Fetch stats from backend
@@ -147,6 +151,7 @@ function App() {
       setStats(res.data);
     } catch (err) {
       console.error("Failed to fetch stats:", err);
+      setStats(null); // fallback
     }
   };
 
@@ -160,7 +165,7 @@ function App() {
 
       const res = await axios.post(`${backendUrl}/api/users/completeTask`, {
         telegramId: user.id,
-        referrerId: user.referrerId || null,
+        referrerId: user.referredBy || null,
       });
 
       setStats(res.data); // LIVE update
