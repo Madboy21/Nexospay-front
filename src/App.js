@@ -12,7 +12,8 @@ function Home({ user, stats, handleAdClick }) {
 
   return (
     <>
-      <Header user={user} balance={stats?.tokens} />
+      <Header user={user} balance={stats?.tokens || 0} />
+
       <TaskProgress total={stats?.dailyLimit || 20} completed={stats?.tasksToday || 0} />
 
       {stats?.tasksToday < stats?.dailyLimit ? (
@@ -64,7 +65,7 @@ function Home({ user, stats, handleAdClick }) {
         </div>
       ) : (
         <p style={{ textAlign: "center", marginTop: 20 }}>
-          ✅ All {stats?.dailyLimit} tasks completed today!
+          ✅ All {stats?.dailyLimit || 20} tasks completed today!
         </p>
       )}
     </>
@@ -115,10 +116,7 @@ function App() {
     script.dataset.zone = "9712298";
     script.dataset.sdk = "show_9712298";
     script.async = true;
-    script.onload = () => {
-      console.log("✅ Monetag SDK loaded");
-      setAdsReady(true);
-    };
+    script.onload = () => setAdsReady(true);
     document.body.appendChild(script);
   }, []);
 
@@ -133,7 +131,7 @@ function App() {
     if (telegramUser) fetchStats(telegramUser.id);
   }, []);
 
-  // Fetch user stats from backend
+  // Fetch user stats
   const fetchStats = async (telegramId) => {
     try {
       const res = await axios.post(`${backendUrl}/api/users/stats`, { telegramId });
@@ -143,7 +141,7 @@ function App() {
     }
   };
 
-  // Handle Ad Click
+  // Handle Ad click
   const handleAdClick = async () => {
     if (!adsReady) return alert("Ad system loading... Please wait a few seconds.");
     if (!user) return;
@@ -155,7 +153,7 @@ function App() {
           try {
             await axios.post(`${backendUrl}/api/tasks/complete-task`, { telegramId: user.id, taskName: "Ad Task" });
             fetchStats(user.id); // refresh stats
-            alert("✅ Ad watched! 1 token added.");
+            alert("✅ Ad watched! 1 VET added.");
           } catch (err) {
             console.error(err);
             alert("Failed to update task.");
