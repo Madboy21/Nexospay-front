@@ -8,7 +8,7 @@ import Withdraw from "./components/Withdraw";
 
 // Home Component
 function Home({ user, balance, completed, totalTasks, handleAdClick }) {
-  const referralLink = `https://t.me/YourBotUsername?start=${user.id}`;
+  const referralLink = `https://t.me/Nexospay_bot?start=${user.id}`;
 
   return (
     <>
