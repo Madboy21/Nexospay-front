@@ -1,12 +1,21 @@
-export default function AdViewer({onCompleteTask}){
-  const handleClick = ()=>{
-    onCompleteTask("Ad Task");
-  };
+import React from "react";
 
+export default function AdViewer({ handleAdClick }) {
   return (
-    <div style={{padding:"10px"}}>
-      <h3>Watch Ad / Complete Task</h3>
-      <button onClick={handleClick}>Complete Task & Earn Tokens</button>
+    <div style={{ textAlign: "center", marginTop: 20 }}>
+      <button
+        style={{
+          background: "#0af",
+          color: "#fff",
+          border: "none",
+          padding: "10px 20px",
+          borderRadius: 5,
+          cursor: "pointer",
+        }}
+        onClick={handleAdClick}
+      >
+        🎯 Watch Ad & Earn
+      </button>
     </div>
   );
 }
