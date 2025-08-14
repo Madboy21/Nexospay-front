@@ -7,36 +7,13 @@ import TaskProgress from "./components/TaskProgress";
 import Withdraw from "./components/Withdraw";
 
 // Home Component
-function Home({ user, balance, completed, totalTasks, handleAdClick, referralLink }) {
+function Home({ user, balance, completed, totalTasks, handleAdClick }) {
+  const referralLink = `https://t.me/YourBotUsername?start=${user.id}`;
+
   return (
     <>
       <Header user={user} balance={balance} />
       <TaskProgress total={totalTasks} completed={completed} />
-
-      {/* Referral Section */}
-      <div style={{ textAlign: "center", margin: "20px 0" }}>
-        <p>📢 Share your referral link and earn 8% from friends!</p>
-        <input
-          type="text"
-          value={referralLink}
-          readOnly
-          style={{ width: "80%", padding: "8px", borderRadius: "5px", border: "1px solid #0af" }}
-        />
-        <button
-          style={{
-            marginLeft: "10px",
-            padding: "8px 12px",
-            background: "#0af",
-            color: "#fff",
-            border: "none",
-            borderRadius: "5px",
-            cursor: "pointer",
-          }}
-          onClick={() => navigator.clipboard.writeText(referralLink)}
-        >
-          Copy
-        </button>
-      </div>
 
       {completed < totalTasks ? (
         <div style={{ textAlign: "center", marginTop: 20 }}>
@@ -54,6 +31,36 @@ function Home({ user, balance, completed, totalTasks, handleAdClick, referralLin
           >
             🎯 Watch Ad & Earn
           </button>
+
+          {/* Referral Section */}
+          <div style={{ marginTop: 20 }}>
+            <p>📢 Share your referral link and earn 8% from friends!</p>
+            <input
+              type="text"
+              value={referralLink}
+              readOnly
+              style={{
+                width: "80%",
+                padding: "8px",
+                borderRadius: "5px",
+                border: "1px solid #0af",
+              }}
+            />
+            <button
+              style={{
+                marginLeft: "10px",
+                padding: "8px 12px",
+                background: "#0af",
+                color: "#fff",
+                border: "none",
+                borderRadius: "5px",
+                cursor: "pointer",
+              }}
+              onClick={() => navigator.clipboard.writeText(referralLink)}
+            >
+              Copy
+            </button>
+          </div>
         </div>
       ) : (
         <p style={{ textAlign: "center", marginTop: 20 }}>
@@ -100,9 +107,8 @@ function App() {
   const [balance, setBalance] = useState(0);
   const [completed, setCompleted] = useState(0);
   const [adsReady, setAdsReady] = useState(false);
-  const [referralLink, setReferralLink] = useState("");
   const totalTasks = 20;
-  const backendUrl = "http://localhost:5000"; // Update backend URL
+  const backendUrl = "http://localhost:5000"; // Change to your backend URL
 
   // Load Monetag SDK
   useEffect(() => {
@@ -118,7 +124,7 @@ function App() {
     document.body.appendChild(script);
   }, []);
 
-  // Telegram user init + fetch backend
+  // Telegram user init + fetch from backend
   useEffect(() => {
     const tg = window.Telegram.WebApp;
     tg.ready();
@@ -127,9 +133,6 @@ function App() {
     setUser(telegramUser);
 
     if (telegramUser) {
-      // Referral link
-      setReferralLink(`${window.location.origin}/?ref=${telegramUser.id}`);
-
       axios
         .get(`${backendUrl}/api/users/${telegramUser.id}`)
         .then((res) => {
@@ -138,11 +141,13 @@ function App() {
             setCompleted(res.data.completed || 0);
           }
         })
-        .catch((err) => console.error(err));
+        .catch((err) => {
+          console.error("Failed to fetch user data:", err);
+        });
     }
   }, []);
 
-  // Save progress
+  // Save task progress to backend
   const saveProgress = (newCompleted, newBalance) => {
     if (!user) return;
     axios
@@ -151,23 +156,32 @@ function App() {
         completed: newCompleted,
         balance: newBalance,
       })
-      .catch((err) => console.error(err));
+      .catch((err) => {
+        console.error("Failed to save progress:", err);
+      });
   };
 
+  // Task complete handler
   const handleComplete = () => {
     const newCompleted = completed + 1;
     const newBalance = balance + 1;
 
     setCompleted(newCompleted);
     setBalance(newBalance);
-    saveProgress(newCompleted, newBalance);
 
-    // If there is a referrer in URL, reward them
-    const urlParams = new URLSearchParams(window.location.search);
-    const refId = urlParams.get("ref");
-    if (refId && refId !== user.id) {
-      axios.post(`${backendUrl}/api/users/referral`, { referrerId: refId, reward: 0.08 }).catch(console.error);
-    }
+    saveProgress(newCompleted, newBalance);
+  };
+
+  // Referral reward handler
+  const handleReferralReward = (referrerId) => {
+    if (!referrerId) return;
+    axios
+      .post(`${backendUrl}/api/users/referral`, {
+        referrerId,
+        reward: 0.08, // 8% reward
+      })
+      .then(() => console.log("Referral rewarded"))
+      .catch((err) => console.error(err));
   };
 
   // Watch Ad button
@@ -186,7 +200,7 @@ function App() {
         })
         .catch((err) => {
           console.error("Ad failed:", err);
-          alert("Ad could not be shown. Try again later.");
+          alert("Ad could not be shown. Please try again later.");
         });
     } else {
       alert("Ad function not available yet.");
@@ -225,7 +239,6 @@ function App() {
                 completed={completed}
                 totalTasks={totalTasks}
                 handleAdClick={handleAdClick}
-                referralLink={referralLink}
               />
             }
           />
