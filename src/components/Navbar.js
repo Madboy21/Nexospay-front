@@ -1,11 +1,24 @@
-export default function Navbar({stats, onCompleteTask, onWithdraw}){
+import React from "react";
+import { Link } from "react-router-dom";
+
+export default function Navbar() {
   return (
-    <nav style={{padding:"10px", display:"flex", justifyContent:"space-around", background:"#333", color:"#fff"}}>
-      <button onClick={onCompleteTask}>Complete Task</button>
-      <button onClick={onWithdraw}>Withdraw</button>
-      <div>Tokens: {stats?.tokens || 0}</div>
-      <div>Completed: {stats?.completedTasks || 0}</div>
+    <nav
+      style={{
+        position: "fixed",
+        bottom: 0,
+        width: "100%",
+        display: "flex",
+        justifyContent: "space-around",
+        padding: "10px 0",
+        background: "#222",
+        color: "#0af",
+        fontWeight: "bold"
+      }}
+    >
+      <Link to="/" style={{ color: "#0af", textDecoration: "none" }}>🏠 Home</Link>
+      <Link to="/" style={{ color: "#0af", textDecoration: "none" }}>💰 Earn</Link>
+      <Link to="/withdraw" style={{ color: "#0af", textDecoration: "none" }}>💸 Withdraw</Link>
     </nav>
   );
 }
-
