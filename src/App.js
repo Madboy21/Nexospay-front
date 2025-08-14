@@ -106,7 +106,7 @@ function App() {
   const [stats, setStats] = useState(null);
   const [adsReady, setAdsReady] = useState(false);
 
-  const backendUrl = "http://localhost:5000"; // Change to your backend URL
+  const backendUrl = "https://nexospay-backend.vercel.app/"; // Change to your backend URL
 
   // Load Monetag SDK
   useEffect(() => {
