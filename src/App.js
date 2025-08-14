@@ -1,20 +1,17 @@
-import React, { useEffect, useState } from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
 import Header from "./components/Header";
 import TaskProgress from "./components/TaskProgress";
-import Navbar from "./components/Navbar";
 import Withdraw from "./components/Withdraw";
-import { getUserStats } from "./utils/api";
+import { getUserStats, completeTask, registerUser } from "./utils/api";
 
 function Home({ user }) {
   const [balance, setBalance] = useState(0);
   const [completed, setCompleted] = useState(0);
-  const [adsReady, setAdsReady] = useState(false);
   const totalTasks = 20;
+  const [adsReady, setAdsReady] = useState(false);
 
-  const referralLink = `https://t.me/Nexospay_bot?start=${user.id}`;
-
-  // Monetag SDK
+  // Monetag SDK load
   useEffect(() => {
     const script = document.createElement("script");
     script.src = "//libtl.com/sdk.js";
@@ -25,50 +22,56 @@ function Home({ user }) {
     document.body.appendChild(script);
   }, []);
 
-  // Fetch stats
+  // Fetch user stats
   useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const res = await getUserStats(user.id);
+    if (!user) return;
+    registerUser({ telegramId: user.id, username: user.username, firstName: user.first_name, lastName: user.last_name })
+      .then(() => getUserStats(user.id))
+      .then(res => {
         setBalance(res.data.tokens);
         setCompleted(res.data.tasksToday);
-      } catch (err) {
-        console.error(err);
-      }
-    };
-    fetchStats();
-  }, [user.id]);
+      });
+  }, [user]);
 
-  const handleAdClick = () => {
+  const handleAdClick = async () => {
     if (!adsReady) return alert("Ads loading...");
     if (typeof window.show_9712298 === "function") {
-      window.show_9712298()
-        .then(() => {
-          setCompleted(prev => prev + 1);
-          setBalance(prev => prev + 1);
-          alert("✅ Ad watched! +1 VET");
-        })
-        .catch(() => alert("❌ Ad failed"));
+      try {
+        await window.show_9712298();
+        const res = await completeTask(user.id);
+        setBalance(res.data.tokens);
+        setCompleted(res.data.tasksToday);
+        alert("✅ Ad watched! +1 VET");
+      } catch {
+        alert("❌ Ad failed");
+      }
     }
   };
+
+  const referralLink = `https://t.me/Nexospay_bot?start=${user?.id}`;
 
   return (
     <div>
       <Header user={user} balance={balance} />
-      <TaskProgress total={totalTasks} completed={completed} />
+      <TaskProgress completed={completed} total={totalTasks} />
       {completed < totalTasks && (
         <div style={{ textAlign: "center", marginTop: 20 }}>
-          <button onClick={handleAdClick} style={{ padding: "10px 20px", cursor: "pointer" }}>
+          <button
+            onClick={handleAdClick}
+            style={{ padding: "10px 20px", background: "#0af", color: "#fff", border: "none", borderRadius: 5, cursor: "pointer" }}
+          >
             🎯 Watch Ad & Earn
           </button>
           <div style={{ marginTop: 20 }}>
-            <p>📢 Share your referral link and earn 10%!</p>
-            <input type="text" value={referralLink} readOnly style={{ width: "80%", padding: 8 }} />
-            <button onClick={() => navigator.clipboard.writeText(referralLink)}>Copy</button>
+            <p>📢 Referral Link:</p>
+            <input type="text" readOnly value={referralLink} style={{ width: "80%", padding: 8, borderRadius: 5 }} />
+            <button onClick={() => navigator.clipboard.writeText(referralLink)} style={{ marginLeft: 10, padding: 8, background: "#0af", color: "#fff", border: "none", borderRadius: 5 }}>
+              Copy
+            </button>
           </div>
         </div>
       )}
-      {completed >= totalTasks && <p style={{ textAlign: "center", marginTop: 20 }}>✅ All tasks completed today!</p>}
+      {completed >= totalTasks && <p style={{ textAlign: "center", marginTop: 20 }}>✅ All {totalTasks} tasks completed today!</p>}
     </div>
   );
 }
@@ -84,15 +87,17 @@ export default function App() {
     setUser(telegramUser);
   }, []);
 
-  if (!user) return <div style={{ color: "#fff", textAlign: "center", marginTop: 50 }}>Loading...</div>;
-
   return (
     <Router>
       <Routes>
         <Route path="/" element={<Home user={user} />} />
-        <Route path="/withdraw" element={<Withdraw telegramId={user.id} />} />
+        <Route path="/withdraw" element={<Withdraw telegramId={user?.id} />} />
       </Routes>
-      <Navbar />
+      <nav style={{ position: "fixed", bottom: 0, width: "100%", display: "flex", justifyContent: "space-around", background: "#222", color: "#0af", padding: 10 }}>
+        <Link to="/" style={{ color: "#0af" }}>🏠 Home</Link>
+        <Link to="/" style={{ color: "#0af" }}>💰 Earn</Link>
+        <Link to="/withdraw" style={{ color: "#0af" }}>💸 Withdraw</Link>
+      </nav>
     </Router>
   );
 }
