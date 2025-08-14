@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
 import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
+import api, { getUserStats, updateUserProgress } from "./utils/api";
 
 import Header from "./components/Header";
 import TaskProgress from "./components/TaskProgress";
@@ -8,7 +8,7 @@ import Withdraw from "./components/Withdraw";
 
 // Home Component
 function Home({ user, stats, handleAdClick }) {
-  if (!stats) return <p>Loading stats...</p>;
+  if (!stats) return <p style={{ textAlign: "center", color: "#fff" }}>Loading stats...</p>;
 
   const referralLink = `https://t.me/Nexospay_bot?start=${user.id}`;
 
@@ -35,7 +35,7 @@ function Home({ user, stats, handleAdClick }) {
           </button>
 
           <div style={{ marginTop: 20 }}>
-            <p>📢 Share your referral link and earn 10% from friends!</p>
+            <p style={{ color: "#fff" }}>📢 Share your referral link and earn 10% from friends!</p>
             <input
               type="text"
               value={referralLink}
@@ -64,7 +64,7 @@ function Home({ user, stats, handleAdClick }) {
           </div>
         </div>
       ) : (
-        <p style={{ textAlign: "center", marginTop: 20 }}>
+        <p style={{ textAlign: "center", marginTop: 20, color: "#0af" }}>
           ✅ All {stats.dailyLimit} tasks completed today!
         </p>
       )}
@@ -107,7 +107,6 @@ function App() {
   const [user, setUser] = useState(null);
   const [stats, setStats] = useState(null);
   const [adsReady, setAdsReady] = useState(false);
-  const backendUrl = "https://nexospay-backend.vercel.app/";
 
   // Load Monetag SDK
   useEffect(() => {
@@ -133,7 +132,7 @@ function App() {
 
   const fetchStats = async (telegramId) => {
     try {
-      const res = await axios.post(`${backendUrl}/api/users/stats`, { telegramId });
+      const res = await getUserStats(telegramId);
       setStats(res.data);
     } catch (err) {
       console.error("Failed to fetch stats:", err);
@@ -149,11 +148,8 @@ function App() {
         .show_9712298()
         .then(async () => {
           try {
-            await axios.post(`${backendUrl}/api/tasks/complete-task`, {
-              telegramId: user.id,
-              taskName: "Ad Task",
-            });
-            fetchStats(user.id);
+            await updateUserProgress(user.id, "Ad Task");
+            fetchStats(user.id); // refresh stats
             alert("✅ Ad watched! 1 VET added.");
           } catch (err) {
             console.error(err);
@@ -176,7 +172,7 @@ function App() {
       <div style={{ paddingBottom: 70, color: "#fff", background: "#121212", minHeight: "100vh", fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif", paddingTop: 20, paddingLeft: 20, paddingRight: 20, boxSizing: "border-box" }}>
         <Routes>
           <Route path="/" element={<Home user={user} stats={stats} handleAdClick={handleAdClick} />} />
-          <Route path="/withdraw" element={<Withdraw telegramId={user.id} backendUrl={backendUrl} />} />
+          <Route path="/withdraw" element={<Withdraw telegramId={user.id} />} />
         </Routes>
         <Navbar />
       </div>
