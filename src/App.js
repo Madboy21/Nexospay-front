@@ -7,15 +7,15 @@ import TaskProgress from "./components/TaskProgress";
 import Withdraw from "./components/Withdraw";
 
 // Home Component
-function Home({ user, balance, completed, totalTasks, handleAdClick }) {
+function Home({ user, stats, handleAdClick }) {
   const referralLink = `https://t.me/Nexospay_bot?start=${user.id}`;
 
   return (
     <>
-      <Header user={user} balance={balance} />
-      <TaskProgress total={totalTasks} completed={completed} />
+      <Header user={user} balance={stats?.tokens} />
+      <TaskProgress total={stats?.dailyLimit || 20} completed={stats?.tasksToday || 0} />
 
-      {completed < totalTasks ? (
+      {stats?.tasksToday < stats?.dailyLimit ? (
         <div style={{ textAlign: "center", marginTop: 20 }}>
           <button
             style={{
@@ -34,7 +34,7 @@ function Home({ user, balance, completed, totalTasks, handleAdClick }) {
 
           {/* Referral Section */}
           <div style={{ marginTop: 20 }}>
-            <p>📢 Share your referral link and earn 8% from friends!</p>
+            <p>📢 Share your referral link and earn 10% from friends!</p>
             <input
               type="text"
               value={referralLink}
@@ -64,7 +64,7 @@ function Home({ user, balance, completed, totalTasks, handleAdClick }) {
         </div>
       ) : (
         <p style={{ textAlign: "center", marginTop: 20 }}>
-          ✅ All {totalTasks} tasks completed today!
+          ✅ All {stats?.dailyLimit} tasks completed today!
         </p>
       )}
     </>
@@ -104,10 +104,8 @@ function Navbar() {
 // Main App
 function App() {
   const [user, setUser] = useState(null);
-  const [balance, setBalance] = useState(0);
-  const [completed, setCompleted] = useState(0);
+  const [stats, setStats] = useState(null);
   const [adsReady, setAdsReady] = useState(false);
-  const totalTasks = 20;
   const backendUrl = "http://localhost:5000"; // Change to your backend URL
 
   // Load Monetag SDK
@@ -126,77 +124,42 @@ function App() {
 
   // Telegram user init + fetch from backend
   useEffect(() => {
-    const tg = window.Telegram.WebApp;
-    tg.ready();
-    tg.expand();
-    const telegramUser = tg.initDataUnsafe?.user;
+    const tg = window.Telegram?.WebApp;
+    tg?.ready();
+    tg?.expand();
+    const telegramUser = tg?.initDataUnsafe?.user;
     setUser(telegramUser);
 
-    if (telegramUser) {
-      axios
-        .get(`${backendUrl}/api/users/${telegramUser.id}`)
-        .then((res) => {
-          if (res.data) {
-            setBalance(res.data.balance || 0);
-            setCompleted(res.data.completed || 0);
-          }
-        })
-        .catch((err) => {
-          console.error("Failed to fetch user data:", err);
-        });
-    }
+    if (telegramUser) fetchStats(telegramUser.id);
   }, []);
 
-  // Save task progress to backend
-  const saveProgress = (newCompleted, newBalance) => {
-    if (!user) return;
-    axios
-      .post(`${backendUrl}/api/users/update`, {
-        telegramId: user.id,
-        completed: newCompleted,
-        balance: newBalance,
-      })
-      .catch((err) => {
-        console.error("Failed to save progress:", err);
-      });
-  };
-
-  // Task complete handler
-  const handleComplete = () => {
-    const newCompleted = completed + 1;
-    const newBalance = balance + 1;
-
-    setCompleted(newCompleted);
-    setBalance(newBalance);
-
-    saveProgress(newCompleted, newBalance);
-  };
-
-  // Referral reward handler
-  const handleReferralReward = (referrerId) => {
-    if (!referrerId) return;
-    axios
-      .post(`${backendUrl}/api/users/referral`, {
-        referrerId,
-        reward: 0.08, // 8% reward
-      })
-      .then(() => console.log("Referral rewarded"))
-      .catch((err) => console.error(err));
-  };
-
-  // Watch Ad button
-  const handleAdClick = () => {
-    if (!adsReady) {
-      alert("Ad system loading... Please wait a few seconds.");
-      return;
+  // Fetch user stats from backend
+  const fetchStats = async (telegramId) => {
+    try {
+      const res = await axios.post(`${backendUrl}/api/users/stats`, { telegramId });
+      setStats(res.data);
+    } catch (err) {
+      console.error("Failed to fetch stats:", err);
     }
+  };
+
+  // Handle Ad Click
+  const handleAdClick = async () => {
+    if (!adsReady) return alert("Ad system loading... Please wait a few seconds.");
+    if (!user) return;
 
     if (typeof window.show_9712298 === "function") {
       window
         .show_9712298()
-        .then(() => {
-          handleComplete();
-          alert("✅ Ad watched! 1 VET added.");
+        .then(async () => {
+          try {
+            await axios.post(`${backendUrl}/api/tasks/complete-task`, { telegramId: user.id, taskName: "Ad Task" });
+            fetchStats(user.id); // refresh stats
+            alert("✅ Ad watched! 1 token added.");
+          } catch (err) {
+            console.error(err);
+            alert("Failed to update task.");
+          }
         })
         .catch((err) => {
           console.error("Ad failed:", err);
@@ -207,45 +170,14 @@ function App() {
     }
   };
 
-  if (!user)
-    return (
-      <div style={{ paddingTop: 40, color: "#fff", background: "#121212", height: "100vh", textAlign: "center" }}>
-        Loading...
-      </div>
-    );
+  if (!user) return <div style={{ paddingTop: 40, color: "#fff", background: "#121212", height: "100vh", textAlign: "center" }}>Loading...</div>;
 
   return (
     <Router>
-      <div
-        style={{
-          paddingBottom: 70,
-          color: "#fff",
-          background: "#121212",
-          minHeight: "100vh",
-          fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
-          paddingTop: 20,
-          paddingLeft: 20,
-          paddingRight: 20,
-          boxSizing: "border-box",
-        }}
-      >
+      <div style={{ paddingBottom: 70, color: "#fff", background: "#121212", minHeight: "100vh", fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif", paddingTop: 20, paddingLeft: 20, paddingRight: 20, boxSizing: "border-box" }}>
         <Routes>
-          <Route
-            path="/"
-            element={
-              <Home
-                user={user}
-                balance={balance}
-                completed={completed}
-                totalTasks={totalTasks}
-                handleAdClick={handleAdClick}
-              />
-            }
-          />
-          <Route
-            path="/withdraw"
-            element={<Withdraw telegramId={user.id} backendUrl={backendUrl} />}
-          />
+          <Route path="/" element={<Home user={user} stats={stats} handleAdClick={handleAdClick} />} />
+          <Route path="/withdraw" element={<Withdraw telegramId={user.id} backendUrl={backendUrl} />} />
         </Routes>
         <Navbar />
       </div>
