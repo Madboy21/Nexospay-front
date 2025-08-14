@@ -12,13 +12,28 @@ import TaskProgress from "./components/TaskProgress";
 import AdViewer from "./components/AdViewer";
 import Withdraw from "./components/Withdraw";
 
-function Home({ user, balance, completed, totalTasks, handleComplete }) {
+function Home({ user, balance, completed, totalTasks, handleAdClick }) {
   return (
     <>
       <Header user={user} balance={balance} />
       <TaskProgress total={totalTasks} completed={completed} />
       {completed < totalTasks ? (
-        <AdViewer onComplete={handleComplete} />
+        <div style={{ textAlign: "center", marginTop: 20 }}>
+          <button
+            style={{
+              background: "#0af",
+              color: "#fff",
+              border: "none",
+              padding: "10px 20px",
+              borderRadius: "5px",
+              cursor: "pointer",
+              fontSize: "16px",
+            }}
+            onClick={handleAdClick}
+          >
+            🎯 Watch Ad & Earn
+          </button>
+        </div>
       ) : (
         <p style={{ textAlign: "center", marginTop: 20 }}>
           ✅ All {totalTasks} tasks completed today!
@@ -62,7 +77,7 @@ function App() {
   const [balance, setBalance] = useState(0);
   const [completed, setCompleted] = useState(0);
   const totalTasks = 20;
-  const backendUrl = "http://localhost:5000"; // Change this to your backend URL
+  const backendUrl = "http://localhost:5000"; // Change to your backend URL
 
   useEffect(() => {
     const tg = window.Telegram.WebApp;
@@ -72,7 +87,6 @@ function App() {
     setUser(telegramUser);
 
     if (telegramUser) {
-      // Fetch user data from backend
       axios
         .get(`${backendUrl}/api/user/${telegramUser.id}`)
         .then((res) => {
@@ -108,6 +122,24 @@ function App() {
     setBalance(newBalance);
 
     saveProgress(newCompleted, newBalance);
+  };
+
+  // 📌 Monetag Ad Trigger
+  const handleAdClick = () => {
+    if (typeof window.show_9712298 === "function") {
+      window
+        .show_9712298()
+        .then(() => {
+          handleComplete();
+          alert("✅ Ad watched! 1 VET added.");
+        })
+        .catch((err) => {
+          console.error("Ad failed:", err);
+          alert("Ad could not be shown. Please try again later.");
+        });
+    } else {
+      alert("Ad system not loaded yet. Try again in a moment.");
+    }
   };
 
   if (!user)
@@ -149,11 +181,14 @@ function App() {
                 balance={balance}
                 completed={completed}
                 totalTasks={totalTasks}
-                handleComplete={handleComplete}
+                handleAdClick={handleAdClick}
               />
             }
           />
-          <Route path="/withdraw" element={<Withdraw telegramId={user.id} backendUrl={backendUrl} />} />
+          <Route
+            path="/withdraw"
+            element={<Withdraw telegramId={user.id} backendUrl={backendUrl} />}
+          />
         </Routes>
         <Navbar />
       </div>
