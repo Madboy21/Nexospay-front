@@ -7,11 +7,37 @@ import TaskProgress from "./components/TaskProgress";
 import Withdraw from "./components/Withdraw";
 
 // Home Component
-function Home({ user, balance, completed, totalTasks, handleAdClick }) {
+function Home({ user, balance, completed, totalTasks, handleAdClick, referralLink }) {
   return (
     <>
       <Header user={user} balance={balance} />
       <TaskProgress total={totalTasks} completed={completed} />
+
+      {/* Referral Section */}
+      <div style={{ textAlign: "center", margin: "20px 0" }}>
+        <p>📢 Share your referral link and earn 8% from friends!</p>
+        <input
+          type="text"
+          value={referralLink}
+          readOnly
+          style={{ width: "80%", padding: "8px", borderRadius: "5px", border: "1px solid #0af" }}
+        />
+        <button
+          style={{
+            marginLeft: "10px",
+            padding: "8px 12px",
+            background: "#0af",
+            color: "#fff",
+            border: "none",
+            borderRadius: "5px",
+            cursor: "pointer",
+          }}
+          onClick={() => navigator.clipboard.writeText(referralLink)}
+        >
+          Copy
+        </button>
+      </div>
+
       {completed < totalTasks ? (
         <div style={{ textAlign: "center", marginTop: 20 }}>
           <button
@@ -74,8 +100,9 @@ function App() {
   const [balance, setBalance] = useState(0);
   const [completed, setCompleted] = useState(0);
   const [adsReady, setAdsReady] = useState(false);
+  const [referralLink, setReferralLink] = useState("");
   const totalTasks = 20;
-  const backendUrl = "https://nexospay-backend.vercel.app/"; // Backend URL
+  const backendUrl = "http://localhost:5000"; // Update backend URL
 
   // Load Monetag SDK
   useEffect(() => {
@@ -84,11 +111,14 @@ function App() {
     script.dataset.zone = "9712298";
     script.dataset.sdk = "show_9712298";
     script.async = true;
-    script.onload = () => setAdsReady(true);
+    script.onload = () => {
+      console.log("✅ Monetag SDK loaded");
+      setAdsReady(true);
+    };
     document.body.appendChild(script);
   }, []);
 
-  // Telegram init + fetch user data
+  // Telegram user init + fetch backend
   useEffect(() => {
     const tg = window.Telegram.WebApp;
     tg.ready();
@@ -97,15 +127,18 @@ function App() {
     setUser(telegramUser);
 
     if (telegramUser) {
+      // Referral link
+      setReferralLink(`${window.location.origin}/?ref=${telegramUser.id}`);
+
       axios
-        .get(`${backendUrl}/api/user/${telegramUser.id}`)
+        .get(`${backendUrl}/api/users/${telegramUser.id}`)
         .then((res) => {
           if (res.data) {
             setBalance(res.data.balance || 0);
             setCompleted(res.data.completed || 0);
           }
         })
-        .catch((err) => console.error("Failed to fetch user data:", err));
+        .catch((err) => console.error(err));
     }
   }, []);
 
@@ -113,40 +146,36 @@ function App() {
   const saveProgress = (newCompleted, newBalance) => {
     if (!user) return;
     axios
-      .post(`${backendUrl}/api/user/update`, {
+      .post(`${backendUrl}/api/users/update`, {
         telegramId: user.id,
         completed: newCompleted,
         balance: newBalance,
       })
-      .catch((err) => console.error("Failed to save progress:", err));
+      .catch((err) => console.error(err));
   };
 
-  // Complete task
   const handleComplete = () => {
     const newCompleted = completed + 1;
     const newBalance = balance + 1;
 
     setCompleted(newCompleted);
     setBalance(newBalance);
-
     saveProgress(newCompleted, newBalance);
+
+    // If there is a referrer in URL, reward them
+    const urlParams = new URLSearchParams(window.location.search);
+    const refId = urlParams.get("ref");
+    if (refId && refId !== user.id) {
+      axios.post(`${backendUrl}/api/users/referral`, { referrerId: refId, reward: 0.08 }).catch(console.error);
+    }
   };
 
-  // Referral reward (8%)
-  const handleReferralReward = (referrerId) => {
-    if (!referrerId) return;
-    axios
-      .post(`${backendUrl}/api/user/referral`, {
-        referrerId,
-        reward: 0.08, // 8%
-      })
-      .then(() => console.log("Referral rewarded"))
-      .catch((err) => console.error(err));
-  };
-
-  // Watch Ad
+  // Watch Ad button
   const handleAdClick = () => {
-    if (!adsReady) return alert("Ad system loading... wait a few seconds.");
+    if (!adsReady) {
+      alert("Ad system loading... Please wait a few seconds.");
+      return;
+    }
 
     if (typeof window.show_9712298 === "function") {
       window
@@ -166,15 +195,7 @@ function App() {
 
   if (!user)
     return (
-      <div
-        style={{
-          paddingTop: 40,
-          color: "#fff",
-          background: "#121212",
-          height: "100vh",
-          textAlign: "center",
-        }}
-      >
+      <div style={{ paddingTop: 40, color: "#fff", background: "#121212", height: "100vh", textAlign: "center" }}>
         Loading...
       </div>
     );
@@ -204,6 +225,7 @@ function App() {
                 completed={completed}
                 totalTasks={totalTasks}
                 handleAdClick={handleAdClick}
+                referralLink={referralLink}
               />
             }
           />
