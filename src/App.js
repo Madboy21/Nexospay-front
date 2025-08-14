@@ -6,7 +6,7 @@ import Header from "./components/Header";
 import TaskProgress from "./components/TaskProgress";
 import Withdraw from "./components/Withdraw";
 
-const backendUrl = "http://localhost:5000"; // Change to your backend URL
+const backendUrl = "https://nexospay-backend.vercel.app/"; // Change to your backend URL
 
 // Home Component
 function Home({ user, stats, handleAdClick }) {
@@ -129,7 +129,7 @@ function App() {
     document.body.appendChild(script);
   }, []);
 
-  // Telegram user init + fetch stats
+  // Telegram user init + register-or-fetch stats
   useEffect(() => {
     const tg = window.Telegram?.WebApp;
     if (!tg) return;
@@ -141,19 +141,24 @@ function App() {
     if (!telegramUser) return;
 
     setUser(telegramUser);
-    fetchStats(telegramUser.id);
-  }, []);
 
-  // Fetch stats from backend
-  const fetchStats = async (telegramId) => {
-    try {
-      const res = await axios.post(`${backendUrl}/api/users/stats`, { telegramId });
-      setStats(res.data);
-    } catch (err) {
-      console.error("Failed to fetch stats:", err);
-      setStats(null); // fallback
-    }
-  };
+    const initUser = async () => {
+      try {
+        const res = await axios.post(`${backendUrl}/api/users/register`, {
+          telegramId: telegramUser.id,
+          username: telegramUser.username,
+          firstName: telegramUser.first_name,
+          lastName: telegramUser.last_name,
+        });
+        setStats(res.data); // ✅ Stats ready
+      } catch (err) {
+        console.error("Register/fetch failed:", err);
+        setStats(null);
+      }
+    };
+
+    initUser();
+  }, []);
 
   // Handle ad click → update tokens + tasks
   const handleAdClick = async () => {
@@ -165,7 +170,7 @@ function App() {
 
       const res = await axios.post(`${backendUrl}/api/users/completeTask`, {
         telegramId: user.id,
-        referrerId: user.referredBy || null,
+        referrerId: stats?.referredBy || null,
       });
 
       setStats(res.data); // LIVE update
