@@ -8,15 +8,16 @@ import Withdraw from "./components/Withdraw";
 
 // Home Component
 function Home({ user, stats, handleAdClick }) {
+  if (!stats) return <p>Loading stats...</p>;
+
   const referralLink = `https://t.me/Nexospay_bot?start=${user.id}`;
 
   return (
     <>
-      <Header user={user} balance={stats?.tokens || 0} />
+      <Header user={user} balance={stats.tokens} />
+      <TaskProgress total={stats.dailyLimit} completed={stats.tasksToday} />
 
-      <TaskProgress total={stats?.dailyLimit || 20} completed={stats?.tasksToday || 0} />
-
-      {stats?.tasksToday < stats?.dailyLimit ? (
+      {stats.tasksToday < stats.dailyLimit ? (
         <div style={{ textAlign: "center", marginTop: 20 }}>
           <button
             style={{
@@ -33,7 +34,6 @@ function Home({ user, stats, handleAdClick }) {
             🎯 Watch Ad & Earn
           </button>
 
-          {/* Referral Section */}
           <div style={{ marginTop: 20 }}>
             <p>📢 Share your referral link and earn 10% from friends!</p>
             <input
@@ -65,7 +65,7 @@ function Home({ user, stats, handleAdClick }) {
         </div>
       ) : (
         <p style={{ textAlign: "center", marginTop: 20 }}>
-          ✅ All {stats?.dailyLimit || 20} tasks completed today!
+          ✅ All {stats.dailyLimit} tasks completed today!
         </p>
       )}
     </>
@@ -107,7 +107,7 @@ function App() {
   const [user, setUser] = useState(null);
   const [stats, setStats] = useState(null);
   const [adsReady, setAdsReady] = useState(false);
-  const backendUrl = "http://localhost:5000"; // Change to your backend URL
+  const backendUrl = "https://nexospay-backend.vercel.app/";
 
   // Load Monetag SDK
   useEffect(() => {
@@ -120,7 +120,7 @@ function App() {
     document.body.appendChild(script);
   }, []);
 
-  // Telegram user init + fetch from backend
+  // Telegram user init + fetch stats
   useEffect(() => {
     const tg = window.Telegram?.WebApp;
     tg?.ready();
@@ -131,7 +131,6 @@ function App() {
     if (telegramUser) fetchStats(telegramUser.id);
   }, []);
 
-  // Fetch user stats
   const fetchStats = async (telegramId) => {
     try {
       const res = await axios.post(`${backendUrl}/api/users/stats`, { telegramId });
@@ -141,7 +140,6 @@ function App() {
     }
   };
 
-  // Handle Ad click
   const handleAdClick = async () => {
     if (!adsReady) return alert("Ad system loading... Please wait a few seconds.");
     if (!user) return;
@@ -151,8 +149,11 @@ function App() {
         .show_9712298()
         .then(async () => {
           try {
-            await axios.post(`${backendUrl}/api/tasks/complete-task`, { telegramId: user.id, taskName: "Ad Task" });
-            fetchStats(user.id); // refresh stats
+            await axios.post(`${backendUrl}/api/tasks/complete-task`, {
+              telegramId: user.id,
+              taskName: "Ad Task",
+            });
+            fetchStats(user.id);
             alert("✅ Ad watched! 1 VET added.");
           } catch (err) {
             console.error(err);
@@ -161,7 +162,7 @@ function App() {
         })
         .catch((err) => {
           console.error("Ad failed:", err);
-          alert("Ad could not be shown. Please try again later.");
+          alert("Ad could not be shown. Try again later.");
         });
     } else {
       alert("Ad function not available yet.");
