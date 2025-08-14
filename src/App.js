@@ -1,30 +1,21 @@
 import React, { useEffect, useState } from "react";
-import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
 import axios from "axios";
+import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
 
 import Header from "./components/Header";
 import TaskProgress from "./components/TaskProgress";
 import Withdraw from "./components/Withdraw";
 
-const backendUrl = "https://nexospay-backend.vercel.app/"; // Change to your backend URL
-
 // Home Component
 function Home({ user, stats, handleAdClick }) {
-  if (!stats)
-    return (
-      <p style={{ textAlign: "center", color: "#fff", marginTop: 50 }}>
-        Fetching stats...
-      </p>
-    );
-
-  const referralLink = `https://t.me/Nexospay_bot?start=${user.id}`;
+  const referralLink = `https://t.me/Nexospay_bot?start=${user.telegramId}`;
 
   return (
     <>
-      <Header user={user} balance={stats.tokens} />
-      <TaskProgress total={stats.dailyLimit} completed={stats.tasksToday} />
+      <Header user={user} stats={stats} />
+      <TaskProgress stats={stats} />
 
-      {stats.tasksToday < stats.dailyLimit ? (
+      {stats.remainingToday > 0 ? (
         <div style={{ textAlign: "center", marginTop: 20 }}>
           <button
             style={{
@@ -41,11 +32,8 @@ function Home({ user, stats, handleAdClick }) {
             🎯 Watch Ad & Earn
           </button>
 
-          {/* Referral Section */}
           <div style={{ marginTop: 20 }}>
-            <p style={{ color: "#fff" }}>
-              📢 Share your referral link and earn 10% from friends!
-            </p>
+            <p>📢 Share your referral link and earn {stats.referralBonus}% bonus!</p>
             <input
               type="text"
               value={referralLink}
@@ -74,8 +62,8 @@ function Home({ user, stats, handleAdClick }) {
           </div>
         </div>
       ) : (
-        <p style={{ textAlign: "center", marginTop: 20, color: "#0af" }}>
-          ✅ All {stats.dailyLimit} tasks completed today!
+        <p style={{ textAlign: "center", marginTop: 20 }}>
+          ✅ All tasks completed today!
         </p>
       )}
     </>
@@ -118,6 +106,8 @@ function App() {
   const [stats, setStats] = useState(null);
   const [adsReady, setAdsReady] = useState(false);
 
+  const backendUrl = "http://localhost:5000"; // Change to your backend URL
+
   // Load Monetag SDK
   useEffect(() => {
     const script = document.createElement("script");
@@ -129,70 +119,44 @@ function App() {
     document.body.appendChild(script);
   }, []);
 
-  // Telegram user init + register-or-fetch stats
+  // Telegram user init + fetch from backend
   useEffect(() => {
-    const tg = window.Telegram?.WebApp;
-    if (!tg) return;
-
+    const tg = window.Telegram.WebApp;
     tg.ready();
     tg.expand();
-
     const telegramUser = tg.initDataUnsafe?.user;
-    if (!telegramUser) return;
-
-    setUser(telegramUser);
-
-    const initUser = async () => {
-      try {
-        const res = await axios.post(`${backendUrl}/api/users/register`, {
-          telegramId: telegramUser.id,
-          username: telegramUser.username,
-          firstName: telegramUser.first_name,
-          lastName: telegramUser.last_name,
-        });
-        setStats(res.data); // ✅ Stats ready
-      } catch (err) {
-        console.error("Register/fetch failed:", err);
-        setStats(null);
-      }
-    };
-
-    initUser();
+    if (telegramUser) {
+      setUser(telegramUser);
+      axios
+        .post(`${backendUrl}/api/users/stats`, { telegramId: telegramUser.id })
+        .then((res) => setStats(res.data))
+        .catch((err) => console.error("Failed to fetch stats:", err));
+    }
   }, []);
 
-  // Handle ad click → update tokens + tasks
-  const handleAdClick = async () => {
-    if (!adsReady) return alert("Ad system loading...");
-    if (!user) return;
+  // Handle ad click
+  const handleAdClick = () => {
+    if (!adsReady || !user) return alert("Please wait, ad system loading...");
 
-    try {
-      if (typeof window.show_9712298 === "function") await window.show_9712298();
-
-      const res = await axios.post(`${backendUrl}/api/users/completeTask`, {
+    axios
+      .post(`${backendUrl}/api/tasks/completeTask`, {
         telegramId: user.id,
         referrerId: stats?.referredBy || null,
+      })
+      .then((res) => {
+        setStats(res.data);
+        alert(`✅ Ad watched! +${res.data.tokenPerTask} VET`);
+      })
+      .catch((err) => {
+        console.error(err);
+        alert(err.response?.data?.error || "Error watching ad");
       });
-
-      setStats(res.data); // LIVE update
-      alert("✅ Ad watched! Token added.");
-    } catch (err) {
-      console.error(err);
-      alert(err.response?.data?.error || "Ad failed, try again later.");
-    }
   };
 
-  if (!user)
+  if (!user || !stats)
     return (
-      <div
-        style={{
-          paddingTop: 40,
-          color: "#fff",
-          background: "#121212",
-          height: "100vh",
-          textAlign: "center",
-        }}
-      >
-        Loading Telegram user...
+      <div style={{ paddingTop: 40, color: "#fff", background: "#121212", height: "100vh", textAlign: "center" }}>
+        Loading...
       </div>
     );
 
