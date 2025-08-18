@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
-import { registerUser, getUserStats, updateUserProgress } from "./utils/api";
+import { registerUser, getUserStats, updateUserProgress, withdrawRequest } from "./utils/api";
 import Header from "./components/Header";
 import TaskProgress from "./components/TaskProgress";
 import Withdraw from "./components/Withdraw";
@@ -8,8 +8,7 @@ import Withdraw from "./components/Withdraw";
 function Home({ user, stats, handleAdClick }) {
   const referralLink = `https://t.me/Nexospay_bot?start=${user.id}`;
 
-  if (!stats)
-    return <p style={{ color: "#fff", textAlign: "center", marginTop: 50 }}>Loading stats...</p>;
+  if (!stats) return <p style={{ color: "#fff", textAlign: "center", marginTop: 50 }}>Loading stats...</p>;
 
   const tasksRemaining = stats.dailyLimit - stats.tasksToday;
 
@@ -21,23 +20,13 @@ function Home({ user, stats, handleAdClick }) {
       <div style={{ marginTop: 20 }}>
         {tasksRemaining > 0 ? (
           <button
-            style={{
-              background: "#0af",
-              color: "#fff",
-              border: "none",
-              padding: "12px 24px",
-              borderRadius: 6,
-              cursor: "pointer",
-              fontSize: 16,
-            }}
+            style={{ background: "#0af", color: "#fff", border: "none", padding: "12px 24px", borderRadius: 6, cursor: "pointer", fontSize: 16 }}
             onClick={handleAdClick}
           >
             🎯 Watch Ad & Earn {stats.tokenPerTask} VET
           </button>
         ) : (
-          <p style={{ color: "#0f0", marginTop: 20 }}>
-            ✅ All {stats.dailyLimit} tasks completed today!
-          </p>
+          <p style={{ color: "#0f0", marginTop: 20 }}>✅ All {stats.dailyLimit} tasks completed today!</p>
         )}
       </div>
 
@@ -48,25 +37,10 @@ function Home({ user, stats, handleAdClick }) {
             type="text"
             value={referralLink}
             readOnly
-            style={{
-              flex: 1,
-              padding: 8,
-              borderRadius: 5,
-              border: "1px solid #0af",
-              background: "#111",
-              color: "#fff",
-            }}
+            style={{ flex: 1, padding: 8, borderRadius: 5, border: "1px solid #0af", background: "#111", color: "#fff" }}
           />
           <button
-            style={{
-              marginLeft: 10,
-              padding: "8px 12px",
-              background: "#0af",
-              color: "#fff",
-              border: "none",
-              borderRadius: 5,
-              cursor: "pointer",
-            }}
+            style={{ marginLeft: 10, padding: "8px 12px", background: "#0af", color: "#fff", border: "none", borderRadius: 5, cursor: "pointer" }}
             onClick={() => navigator.clipboard.writeText(referralLink)}
           >
             Copy
@@ -74,35 +48,16 @@ function Home({ user, stats, handleAdClick }) {
         </div>
       </div>
 
-      <p style={{ marginTop: 20, color: "#ff0" }}>
-        💰 Minimum Withdraw: {stats.minWithdraw} VET
-      </p>
+      <p style={{ marginTop: 20, color: "#ff0" }}>💰 Minimum Withdraw: {stats.minWithdraw} VET</p>
     </div>
   );
 }
 
 function Navbar() {
   return (
-    <nav
-      style={{
-        position: "fixed",
-        bottom: 0,
-        width: "100%",
-        background: "#222",
-        display: "flex",
-        justifyContent: "space-around",
-        padding: "12px 0",
-        color: "#0af",
-        fontWeight: "bold",
-        boxSizing: "border-box",
-      }}
-    >
-      <Link to="/" style={{ color: "#0af", textDecoration: "none" }}>
-        🏠 Home
-      </Link>
-      <Link to="/withdraw" style={{ color: "#0af", textDecoration: "none" }}>
-        💸 Withdraw
-      </Link>
+    <nav style={{ position: "fixed", bottom: 0, width: "100%", background: "#222", display: "flex", justifyContent: "space-around", padding: "12px 0", color: "#0af", fontWeight: "bold", boxSizing: "border-box" }}>
+      <Link to="/" style={{ color: "#0af", textDecoration: "none" }}>🏠 Home</Link>
+      <Link to="/withdraw" style={{ color: "#0af", textDecoration: "none" }}>💸 Withdraw</Link>
     </nav>
   );
 }
@@ -159,20 +114,11 @@ function App() {
     }
   };
 
-  if (!user)
-    return <div style={{ color: "#fff", paddingTop: 50, textAlign: "center" }}>Loading...</div>;
+  if (!user) return <div style={{ color: "#fff", paddingTop: 50, textAlign: "center" }}>Loading...</div>;
 
   return (
     <Router>
-      <div
-        style={{
-          paddingBottom: 70,
-          color: "#fff",
-          background: "#121212",
-          minHeight: "100vh",
-          boxSizing: "border-box",
-        }}
-      >
+      <div style={{ paddingBottom: 70, color: "#fff", background: "#121212", minHeight: "100vh", boxSizing: "border-box" }}>
         <Routes>
           <Route path="/" element={<Home user={user} stats={stats} handleAdClick={handleAdClick} />} />
           <Route path="/withdraw" element={<Withdraw telegramId={user.id} />} />
