@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "https://nexospay-backend.vercel.app/", // backend URL
+  baseURL: "https://nexospay-backend.vercel.app/api", // backend URL
   headers: { "Content-Type": "application/json" },
 });
 
